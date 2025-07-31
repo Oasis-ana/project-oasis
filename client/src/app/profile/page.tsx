@@ -144,6 +144,69 @@ function SettingsModal({
     fileInputRef.current?.click()
   }
 
+  const handleBioClick = () => {
+    setBioText(user?.bio || '')
+    setIsEditingBio(true)
+    setTimeout(() => {
+      bioInputRef.current?.focus()
+      bioInputRef.current?.select()
+    }, 0)
+  }
+
+  const handleBioSave = async () => {
+    if (bioText === user?.bio) {
+      setIsEditingBio(false)
+      return
+    }
+
+    setIsSavingBio(true)
+
+    try {
+      const token = localStorage.getItem('authToken')
+      const response = await fetch('http://localhost:8000/api/auth/update-profile/', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ bio: bioText.trim() })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setUser(prevUser => {
+          if (!prevUser) return null
+          const updatedUser = { ...prevUser, bio: bioText.trim() }
+          localStorage.setItem('userProfile', JSON.stringify(updatedUser))
+          return updatedUser
+        })
+        setIsEditingBio(false)
+      } else {
+        alert(data.error || 'Failed to update bio')
+      }
+    } catch (error) {
+      console.error('Bio update error:', error)
+      alert('Failed to update bio. Please try again.')
+    } finally {
+      setIsSavingBio(false)
+    }
+  }
+
+  const handleBioCancel = () => {
+    setBioText(user?.bio || '')
+    setIsEditingBio(false)
+  }
+
+  const handleBioKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleBioSave()
+    } else if (e.key === 'Escape') {
+      handleBioCancel()
+    }
+  }
+
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem('authToken')
@@ -890,7 +953,11 @@ export default function ProfilePage() {
   const [selectedOutfitForView, setSelectedOutfitForView] = useState<Outfit | null>(null)
   const [showOutfitModal, setShowOutfitModal] = useState(false)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [isEditingBio, setIsEditingBio] = useState(false)
+  const [bioText, setBioText] = useState('')
+  const [isSavingBio, setIsSavingBio] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const bioInputRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
 
   const handleAvatarUpload = async (file: File) => {
