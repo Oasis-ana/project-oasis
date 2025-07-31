@@ -41,7 +41,6 @@ interface Outfit {
   isFavorite?: boolean
 }
 
-
 function SettingsModal({ 
   isOpen, 
   onClose, 
@@ -68,7 +67,6 @@ function SettingsModal({
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  
   useEffect(() => {
     if (isOpen && currentUser) {
       setSettingsForm(prev => ({
@@ -84,13 +82,11 @@ function SettingsModal({
   const handleImageUpload = async (file: File) => {
     if (!file) return
 
-    
     if (!file.type.startsWith('image/')) {
       setErrors({ avatar: 'Please select an image file' })
       return
     }
 
-    
     if (file.size > 5 * 1024 * 1024) {
       setErrors({ avatar: 'Image size must be less than 5MB' })
       return
@@ -115,7 +111,6 @@ function SettingsModal({
       const data = await response.json()
 
       if (response.ok) {
-        
         onUserUpdate({
           ...currentUser,
           avatar: data.avatar
@@ -135,14 +130,12 @@ function SettingsModal({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      
       const reader = new FileReader()
       reader.onload = (e) => {
         setPreviewImage(e.target?.result as string)
       }
       reader.readAsDataURL(file)
 
-      
       handleImageUpload(file)
     }
   }
@@ -183,7 +176,6 @@ function SettingsModal({
       newErrors.username = 'Username must be at least 3 characters'
     }
 
-    
     if (settingsForm.newPassword || settingsForm.currentPassword) {
       if (!settingsForm.currentPassword) {
         newErrors.currentPassword = 'Current password is required'
@@ -218,9 +210,7 @@ function SettingsModal({
         throw new Error('No authentication token found')
       }
 
-      
       const updateData: any = {}
-      
       
       if (settingsForm.username.trim() !== currentUser?.username) {
         updateData.username = settingsForm.username.trim()
@@ -230,7 +220,6 @@ function SettingsModal({
         updateData.bio = settingsForm.bio.trim()
       }
 
-      
       if (settingsForm.currentPassword && settingsForm.newPassword) {
         updateData.current_password = settingsForm.currentPassword
         updateData.new_password = settingsForm.newPassword
@@ -304,8 +293,6 @@ function SettingsModal({
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
       <div className="bg-white rounded-lg p-6 w-80 shadow-2xl pointer-events-auto border border-gray-100">
-        
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 
             className="text-xl font-bold text-[#0B2C21]" 
@@ -319,7 +306,6 @@ function SettingsModal({
           />
         </div>
 
-        {/* Error */}
         {errors.general && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
             {errors.general}
@@ -327,8 +313,6 @@ function SettingsModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          
-          {/* Profile Picture with Upload */}
           <div className="text-center mb-4">
             <div className="relative w-16 h-16 mx-auto mb-2">
               {previewImage ? (
@@ -343,7 +327,6 @@ function SettingsModal({
                 </div>
               )}
               
-              {/* Upload img */}
               <button
                 type="button"
                 onClick={triggerFileSelect}
@@ -372,7 +355,6 @@ function SettingsModal({
               <p className="text-xs text-red-600 mt-1">{errors.avatar}</p>
             )}
 
-            {/* Hidden file input */}
             <input
               ref={fileInputRef}
               type="file"
@@ -382,7 +364,6 @@ function SettingsModal({
             />
           </div>
 
-          {/* Username */}
           <div>
             <input
               type="text"
@@ -399,7 +380,6 @@ function SettingsModal({
             )}
           </div>
 
-          {/* Bio */}
           <div>
             <textarea
               value={settingsForm.bio}
@@ -411,7 +391,6 @@ function SettingsModal({
             />
           </div>
 
-          {/* Passwords */}
           <div className="space-y-3 pt-2">
             <input
               type="password"
@@ -456,7 +435,6 @@ function SettingsModal({
             )}
           </div>
 
-          {/* Buttons */}
           <div className="pt-4 space-y-2">
             <button
               type="submit"
@@ -484,7 +462,6 @@ function SettingsModal({
   )
 }
 
-// OutfitCreator Component
 function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
   isOpen: boolean
   onClose: () => void
@@ -623,7 +600,6 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
     try {
       onSaveOutfit(newOutfit)
       
-      // Reset form
       setOutfitTitle('')
       setOutfitDescription('')
       setSelectedItems([])
@@ -650,8 +626,6 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
   return (
     <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-xl border border-white/20">
-        
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-4">
             <button
@@ -679,7 +653,6 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
         </div>
 
         <div className="flex h-[calc(90vh-80px)]">
-          {/* Left side - Outfit Builder */}
           <div className="w-1/3 p-6 border-r border-gray-200 flex flex-col">
             <div className="mb-6">
               <h3 className="text-lg font-medium text-[#0B2C21] mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -717,7 +690,6 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
               </div>
             </div>
 
-            {/* Outfit Board aka Drop Zone fun*/}
             <div className="flex-1 overflow-y-auto">
               <h4 className="text-md font-medium text-gray-700 mb-3" style={{ fontFamily: 'Inter' }}>
                 Outfit Board ({selectedItems.length} items)
@@ -796,10 +768,7 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
             </div>
           </div>
 
-          {/*  Closet Items */}
           <div className="flex-1 flex flex-col">
-            
-            {/* Search and Filters */}
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center space-x-4 mb-4">
                 <div className="flex-1 relative">
@@ -833,7 +802,6 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
               </div>
             </div>
 
-            {/* Items Grid */}
             <div className="flex-1 overflow-y-auto p-6">
               {isLoadingItems ? (
                 <div className="text-center py-8">
@@ -891,7 +859,6 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
                           </p>
                         </div>
                         
-                        
                         <div className="absolute top-2 left-2 opacity-0 hover:opacity-100 transition-opacity">
                           <div className="text-white text-xs bg-black bg-opacity-50 px-2 py-1 rounded">
                             Drag me!
@@ -922,7 +889,68 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('outfits')
   const [selectedOutfitForView, setSelectedOutfitForView] = useState<Outfit | null>(null)
   const [showOutfitModal, setShowOutfitModal] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB')
+      return
+    }
+
+    setIsUploadingAvatar(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('avatar', file)
+
+      const token = localStorage.getItem('authToken')
+      const response = await fetch('http://localhost:8000/api/auth/upload-avatar/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+        },
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setUser(prevUser => {
+          if (!prevUser) return null
+          const updatedUser = { ...prevUser, avatar: data.avatar }
+          localStorage.setItem('userProfile', JSON.stringify(updatedUser))
+          return updatedUser
+        })
+      } else {
+        alert(data.error || 'Failed to upload image')
+      }
+    } catch (error) {
+      console.error('Image upload error:', error)
+      alert('Failed to upload image. Please try again.')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleAvatarUpload(file)
+    }
+  }
+
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click()
+  }
 
   const toggleFavorite = (outfitId: string) => {
     setSavedOutfits(prevOutfits => {
@@ -936,7 +964,6 @@ export default function ProfilePage() {
     })
   }
 
-  
   useEffect(() => {
     setIsClient(true)
     const cached = localStorage.getItem('userProfile')
@@ -948,7 +975,6 @@ export default function ProfilePage() {
       }
     }
 
-    
     const outfits = localStorage.getItem('savedOutfits')
     if (outfits) {
       try {
@@ -959,7 +985,6 @@ export default function ProfilePage() {
     }
   }, [])
 
-  
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -1049,7 +1074,6 @@ export default function ProfilePage() {
     router.back()
   }
 
-  
   if (!isClient) {
     return (
       <div className="min-h-screen bg-[#F5F3EC] flex">
@@ -1063,14 +1087,12 @@ export default function ProfilePage() {
     <>
       <div className={`min-h-screen bg-[#F5F3EC] flex transition-all duration-200 ${showSettingsModal || showOutfitCreator ? 'blur-sm' : ''}`}>
         
-        {/* Sidebar */}
         <Sidebar 
           user={user} 
           onShowSettings={() => setShowSettingsModal(true)}
         />
 
         <div className="flex-1">
-            {/* Profile Header */}
           <div className="flex items-center pl-24 pr-6 py-6 space-x-6">
             <ArrowLeft 
               className="w-6 h-6 text-gray-600 cursor-pointer hover:text-gray-800 transition-colors flex-shrink-0" 
@@ -1103,19 +1125,44 @@ export default function ProfilePage() {
           )}
 
           <div className="text-center pl-32 pr-12 mb-8">
-            <div className="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden">
+            <div 
+              className="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden cursor-pointer group relative"
+              onClick={triggerFileSelect}
+            >
               {user?.avatar ? (
                 <img
                   src={user.avatar}
                   alt="Profile"
-                  className="w-24 h-24 rounded-full object-cover"
+                  className="w-24 h-24 rounded-full object-cover transition-all group-hover:brightness-75"
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-orange-400 flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full bg-orange-400 flex items-center justify-center transition-all group-hover:bg-orange-500">
                   <div className="w-16 h-16 rounded-full bg-orange-600"></div>
                 </div>
               )}
+              
+              {isUploadingAvatar ? (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-full">
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+              )}
+              
+              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-lg border-2 border-gray-100">
+                <Camera className="w-3 h-3 text-gray-600" />
+              </div>
             </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
 
             <h1 className="text-2xl font-semibold text-gray-800 mb-2">
               {user?.username?.toUpperCase() || 'USERNAME'}
@@ -1125,7 +1172,6 @@ export default function ProfilePage() {
               {user?.bio || 'You write your bio here'}
             </p>
 
-            {/* Action Buttons */}
             <div className="flex justify-center space-x-4">
               <button
                 onClick={() => setShowOutfitCreator(true)}
@@ -1149,9 +1195,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Content Tabs */}
           <div className="pl-32 pr-12">
-            {/* Outfits Grid */}
             {activeTab === 'outfits' && (
               <div className="pb-6">
                 {savedOutfits.length === 0 ? (
@@ -1303,7 +1347,6 @@ export default function ProfilePage() {
                             )}
                           </div>
                           
-                          {/* Delete button */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
@@ -1316,13 +1359,11 @@ export default function ProfilePage() {
                           </button>
                         </div>
                         
-                        {/* Card content */}
                         <div className="p-4 bg-white">
                           <h4 className="text-gray-900 font-semibold text-lg mb-2 truncate" style={{ fontFamily: 'Playfair Display, serif' }}>
                             {outfit.title}
                           </h4>
                           
-                          {/* Tags */}
                           <div className="mb-3">
                             <span className="inline-block bg-[#0B2C21] text-white text-xs px-3 py-1 rounded-full">
                               {outfit.items.length} items
@@ -1335,7 +1376,6 @@ export default function ProfilePage() {
                             </p>
                           )}
                           
-                          {/* Date at bottom */}
                           <p className="text-xs text-gray-700" style={{ fontFamily: 'Inter' }}>
                             {new Date(outfit.createdAt).toLocaleDateString()}
                           </p>
@@ -1350,7 +1390,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      
       <SettingsModal 
         isOpen={showSettingsModal} 
         onClose={() => setShowSettingsModal(false)}
@@ -1359,19 +1398,16 @@ export default function ProfilePage() {
         isOfflineMode={isOfflineMode}
       />
 
-      
       <OutfitCreator
         isOpen={showOutfitCreator}
         onClose={() => setShowOutfitCreator(false)}
         onSaveOutfit={handleSaveOutfit}
       />
 
-      
       {showOutfitModal && selectedOutfitForView && (
         <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-xl border border-white/20">
             
-            {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
                 <h2 className="text-xl font-semibold text-[#0B2C21]" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -1391,7 +1427,6 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {/* Outfit Board View */}
             <div className="p-8 max-h-[calc(90vh-120px)] overflow-y-auto">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
                 {selectedOutfitForView.items.map((item, index) => (
