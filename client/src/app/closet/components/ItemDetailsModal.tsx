@@ -30,13 +30,13 @@ export default function ItemDetailsModal({ item, onClose, onToggleWear, onUpdate
   const [newTag, setNewTag] = useState('')
   const [imageError, setImageError] = useState(false)
 
-  // Re-sync state with prop changes
+  
   useEffect(() => {
     setItemData(item);
     setImageError(false);
   }, [item]);
 
-  // Smart image detection for CORS handling
+  
   const isUrlImage = (imageUrl: string) => {
     if (!imageUrl) return false
     const isMediaStorageImage = 

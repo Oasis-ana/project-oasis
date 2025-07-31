@@ -1,4 +1,3 @@
-
 export interface ClothingItem {
     id: string
     name: string

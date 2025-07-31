@@ -72,7 +72,7 @@ export default function ClosetPage() {
     tags: ''
   })
   
-  // Image loading states
+  
   const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({})
 
   const handleImageLoad = (itemId: string) => {
@@ -87,17 +87,17 @@ export default function ClosetPage() {
     setImageLoadingStates(prev => ({ ...prev, [itemId]: true }))
   }
 
-  // Smart image detection for CORS handling
+  
   const isUrlImage = (imageUrl: string) => {
     if (!imageUrl) return false
-    // Check if it's an external URL (not from your MediaStorage)
+    
     const isMediaStorageImage = 
-      imageUrl.includes('.amazonaws.com') ||     // S3 bucket
-      imageUrl.includes('cloudfront.net') ||     // CloudFront CDN
-      imageUrl.startsWith('/media/') ||          // Local Django media
-      imageUrl.includes('storage.googleapis') || // Google Cloud Storage
-      imageUrl.includes('localhost:8000') ||     // Local Django server
-      !imageUrl.startsWith('http')               // Relative paths
+      imageUrl.includes('.amazonaws.com') || 
+      imageUrl.includes('cloudfront.net') ||     
+      imageUrl.startsWith('/media/') ||          
+      imageUrl.includes('storage.googleapis') || 
+      imageUrl.includes('localhost:8000') ||     
+      !imageUrl.startsWith('http')               
     
     return imageUrl.startsWith('http') && !isMediaStorageImage
   }
@@ -106,28 +106,24 @@ export default function ClosetPage() {
     return isUrlImage(imageUrl)
   }
 
-  // Enhanced image loading with proxy fallback
+  /
   const getProxiedImageUrl = (originalUrl: string) => {
     if (!isUrlImage(originalUrl)) {
-      return originalUrl // Return as-is for your bucket images
+      return originalUrl 
     }
     
-    // For external URLs that might have CORS issues, you can:
-    // Option 1: Use a CORS proxy (for development/testing)
-    // return `https://cors-anywhere.herokuapp.com/${originalUrl}`
     
-    // Option 2: Return original URL and handle CORS in img tag
     return originalUrl
   }
 
-  // URL validation
+  
   const validateImageUrl = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
       const img = new Image()
       img.onload = () => resolve(true)
       img.onerror = () => resolve(false)
       img.src = url
-      // Timeout after 5 seconds
+      
       setTimeout(() => resolve(false), 5000)
     })
   }
@@ -145,7 +141,7 @@ export default function ClosetPage() {
       }
     }
 
-    // Check for pending item image from camera
+    
     const pendingImage = localStorage.getItem('pendingItemImage')
     if (pendingImage) {
       setSelectedImage(pendingImage)
@@ -153,7 +149,7 @@ export default function ClosetPage() {
       localStorage.removeItem('pendingItemImage')
     }
 
-    // Check if we should open item creation modal
+    
     const shouldCreateItem = localStorage.getItem('shouldCreateItem')
     if (shouldCreateItem) {
       setShowAddItemModal(true)
@@ -505,7 +501,7 @@ export default function ClosetPage() {
     }, 3000)
   }
 
-  // NEW: Handle URL reference addition
+  
   const handleAddWithUrl = (catalogItem: any) => {
     setSelectedCatalogItem(catalogItem)
     setCatalogItemData({
@@ -527,7 +523,7 @@ export default function ClosetPage() {
       return
     }
 
-    // Validate URL if provided
+    
     if (urlReference.trim()) {
       const isValidUrl = await validateImageUrl(urlReference)
       if (!isValidUrl) {
@@ -556,7 +552,7 @@ export default function ClosetPage() {
           tags: catalogItemData.tags.split(',').map(tag => tag.trim()),
           is_favorite: false,
           is_worn: false,
-          image_url: imageToSave, // Send to backend's image_url field
+          image_url: imageToSave, 
         })
       })
 
@@ -570,7 +566,7 @@ export default function ClosetPage() {
           size: newItemData.size,
           color: newItemData.color,
           category: newItemData.category,
-          image: newItemData.image || '', // Backend returns prioritized image
+          image: newItemData.image || '', 
           tags: newItemData.tags || [],
           isFavorite: newItemData.is_favorite || false,
           isWorn: newItemData.is_worn || false,
@@ -617,7 +613,7 @@ export default function ClosetPage() {
 
     const newFavoriteStatus = !item.isFavorite
 
-    // Optimistically update the UI
+    
     const updatedItems = clothingItems.map(clothingItem =>
       clothingItem.id === item.id
         ? { ...clothingItem, isFavorite: newFavoriteStatus }
@@ -625,7 +621,7 @@ export default function ClosetPage() {
     )
     setClothingItems(updatedItems)
 
-    // Update the selected item if it's open in details modal
+    
     if (selectedItemForDetails && selectedItemForDetails.id === item.id) {
       setSelectedItemForDetails({ ...selectedItemForDetails, isFavorite: newFavoriteStatus })
     }
@@ -961,10 +957,10 @@ export default function ClosetPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F3EC] flex">
-      {/* Use Universal Sidebar Component */}
+      {/* Sidebar  */}
       <Sidebar 
         user={user} 
-        onShowSettings={() => {/* Add settings handler */}}
+        onShowSettings={() => {}}
       />
 
       {/* Main Content */}
@@ -1130,7 +1126,7 @@ export default function ClosetPage() {
                                     handleImageError(item.id)
                                     console.log('Image failed to load:', item.image)
                                     
-                                    // Try without CORS as fallback
+                                    
                                     if (shouldUseCors(item.image) && e.currentTarget.crossOrigin) {
                                       console.log('Retrying without CORS...')
                                       e.currentTarget.crossOrigin = ''
@@ -1138,7 +1134,7 @@ export default function ClosetPage() {
                                       return
                                     }
                                     
-                                    // Show fallback icon
+                                    
                                     e.currentTarget.style.display = 'none'
                                     const parent = e.currentTarget.parentElement
                                     if (parent && !parent.querySelector('.fallback-icon')) {
@@ -1163,7 +1159,7 @@ export default function ClosetPage() {
                             {getCategoryLabel(item.category)}
                           </div>
                           
-                          {/* URL indicator badge */}
+                       
                           {isUrlImage(item.image) && (
                             <div className="absolute top-3 right-20 bg-blue-500 bg-opacity-80 text-white px-2 py-1 rounded text-xs font-medium flex items-center space-x-1">
                               <Link className="w-3 h-3" />
@@ -1171,7 +1167,7 @@ export default function ClosetPage() {
                             </div>
                           )}
                           
-                          {/* Star Favorite Button */}
+                          {/* Favorite Button */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation()

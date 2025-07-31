@@ -44,7 +44,7 @@ export default function SettingsModal({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
-  // Set current user data when modal opens
+  
   useEffect(() => {
     if (isOpen && currentUser) {
       setSettingsForm(prev => ({
@@ -60,13 +60,13 @@ export default function SettingsModal({
   const handleImageUpload = async (file: File) => {
     if (!file) return
 
-    // Validate file type
+    
     if (!file.type.startsWith('image/')) {
       setErrors({ avatar: 'Please select an image file' })
       return
     }
 
-    // Validate file size (max 5MB)
+    
     if (file.size > 5 * 1024 * 1024) {
       setErrors({ avatar: 'Image size must be less than 5MB' })
       return
@@ -91,7 +91,7 @@ export default function SettingsModal({
       const data = await response.json()
 
       if (response.ok) {
-        // Update user data with new avatar
+       
         onUserUpdate({
           ...currentUser,
           avatar: data.avatar
@@ -111,14 +111,14 @@ export default function SettingsModal({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Create preview
+     
       const reader = new FileReader()
       reader.onload = (e) => {
         setPreviewImage(e.target?.result as string)
       }
       reader.readAsDataURL(file)
 
-      // Upload image
+     
       handleImageUpload(file)
     }
   }
@@ -157,7 +157,7 @@ export default function SettingsModal({
       newErrors.username = 'Username must be at least 3 characters'
     }
 
-    // Password validation (only if changing password)
+    
     if (settingsForm.newPassword || settingsForm.currentPassword) {
       if (!settingsForm.currentPassword) {
         newErrors.currentPassword = 'Current password is required'
@@ -192,10 +192,10 @@ export default function SettingsModal({
         throw new Error('No authentication token found')
       }
 
-      // Prepare update data
+      
       const updateData: any = {}
       
-      // Only include changed fields
+      
       if (settingsForm.username.trim() !== currentUser?.username) {
         updateData.username = settingsForm.username.trim()
       }
@@ -204,7 +204,7 @@ export default function SettingsModal({
         updateData.bio = settingsForm.bio.trim()
       }
 
-      // Include password fields if changing password
+      
       if (settingsForm.currentPassword && settingsForm.newPassword) {
         updateData.current_password = settingsForm.currentPassword
         updateData.new_password = settingsForm.newPassword
@@ -312,12 +312,12 @@ export default function SettingsModal({
                   className="w-16 h-16 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-orange-400 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-orange-600"></div>
+                <div className="w-16 h-16 rounded-full bg-green-950 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-green-950"></div>
                 </div>
               )}
               
-              {/* Upload overlay */}
+              {/* Upload  */}
               <button
                 type="button"
                 onClick={triggerFileSelect}
@@ -346,7 +346,7 @@ export default function SettingsModal({
               <p className="text-xs text-red-600 mt-1">{errors.avatar}</p>
             )}
 
-            {/* Hidden file input */}
+            
             <input
               ref={fileInputRef}
               type="file"

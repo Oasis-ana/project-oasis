@@ -1,4 +1,4 @@
-// src/app/components/shared/Sidebar.tsx
+
 'use client'
 import { Home, Camera, Bell, Settings, X, Upload } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
@@ -34,11 +34,11 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
   const [showChoiceModal, setShowChoiceModal] = useState(false)
   const [selectedChoice, setSelectedChoice] = useState<'outfit' | 'item' | null>(null)
   
-  // Universal modals that work from any page
+  
   const [showCreateOutfitModal, setShowCreateOutfitModal] = useState(false)
   const [showAddItemModal, setShowAddItemModal] = useState(false)
   
-  // Form states
+  
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [outfitData, setOutfitData] = useState<OutfitData>({
@@ -59,10 +59,10 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Base categories
+  
   const baseCategories = ['Casual', 'Work', 'Date Night', 'Formal', 'Party', 'Weekend', 'Travel', 'Sport']
 
-  // Always show choice modal when camera is clicked
+  
   const handleCameraClick = () => {
     setShowChoiceModal(true)
   }
@@ -71,7 +71,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
     setSelectedChoice(choice)
     setShowChoiceModal(false)
     
-    // Open the appropriate creation modal (no navigation!)
+    
     if (choice === 'outfit') {
       setShowCreateOutfitModal(true)
     } else if (choice === 'item') {
@@ -297,7 +297,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
             />
           </div>
 
-          {/* Camera Icon - Universal creator */}
+          {/* Camera Icon - Universal!! */}
           <div
             className="flex items-center justify-center cursor-pointer hover:opacity-75 mb-14 transition-opacity"
             onClick={handleCameraClick}
@@ -311,7 +311,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
           </div>
         </div>
 
-        {/* Settings Icon - Fixed to bottom */}
+        {/* Settings Icon */}
         <div className="flex items-center justify-center">
           <Settings
             className="w-6 h-6 text-white cursor-pointer hover:text-gray-300 transition-colors"
@@ -378,7 +378,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
         </div>
       )}
 
-      {/* Universal Outfit Creation Modal */}
+      {/*  Outfit Creation Modal */}
       {showCreateOutfitModal && (
         <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-md rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-white/20">
@@ -546,7 +546,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
         </div>
       )}
 
-      {/* Universal Add Item Modal */}
+      {/*  Add Item Modal */}
       {showAddItemModal && (
         <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-md rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-white/20">

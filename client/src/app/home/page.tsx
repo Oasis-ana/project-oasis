@@ -1,4 +1,4 @@
-// src/app/homepage/page.tsx
+
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -35,7 +35,7 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState('All Outfits')
   const [isClient, setIsClient] = useState(false)
   
-  // Camera and outfit creation states
+  
   const [showCreateOutfitModal, setShowCreateOutfitModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [outfitData, setOutfitData] = useState({
@@ -48,15 +48,15 @@ export default function HomePage() {
   const [isUploading, setIsUploading] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   
-  // Pinterest-style modal states
+  
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null)
   const [showOutfitModal, setShowOutfitModal] = useState(false)
   
-  // State for editing outfits
+ 
   const [isEditing, setIsEditing] = useState(false)
   const [editingOutfitId, setEditingOutfitId] = useState<string | null>(null)
   
-  // State for deleting outfits
+  
   const [showDeleteOutfitModal, setShowDeleteOutfitModal] = useState(false)
   const [outfitToDelete, setOutfitToDelete] = useState<Outfit | null>(null)
   
@@ -68,7 +68,7 @@ export default function HomePage() {
   // Base categories
   const baseCategories = ['Casual', 'Work', 'Date Night', 'Formal', 'Party', 'Weekend', 'Travel', 'Sport']
   
-  // Combined list of all categories, including custom tabs
+  
   const allCategories = Array.from(new Set([...baseCategories, ...defaultTabs, ...customTabs]));
 
   // Load cached data
@@ -101,7 +101,7 @@ export default function HomePage() {
       }
     }
 
-    // Check for pending outfit image from camera
+    
     const pendingImage = localStorage.getItem('pendingOutfitImage')
     if (pendingImage) {
       setSelectedImage(pendingImage)
@@ -109,7 +109,7 @@ export default function HomePage() {
       localStorage.removeItem('pendingOutfitImage')
     }
 
-    // Check if we should open outfit creation modal
+    
     const shouldCreateOutfit = localStorage.getItem('shouldCreateOutfit')
     if (shouldCreateOutfit) {
       setShowCreateOutfitModal(true)
@@ -161,20 +161,20 @@ export default function HomePage() {
     })
   }
 
-  // Tab and search management
+  
   const tabs = ['All Outfits', 'Favorites', ...defaultTabs, ...customTabs, '+ Add Tab']
   
-  // First, filter by the active tab
+  
   const tabFilteredOutfits = activeTab === 'All Outfits' 
     ? outfits 
     : activeTab === 'Favorites'
     ? outfits.filter(outfit => outfit.liked)
     : outfits.filter(outfit => outfit.category === activeTab);
 
-  // Then, filter the results by the search query
+  
   const filteredOutfits = tabFilteredOutfits.filter(outfit => {
     if (searchQuery === '') {
-      return true; // Return all tab-filtered outfits if no search query
+      return true; 
     }
 
     const query = searchQuery.toLowerCase();
@@ -328,7 +328,7 @@ export default function HomePage() {
     setSuccessMessage(null);
   }
 
-  // 1. UPDATE SUCCESS MESSAGE HANDLING:
+  
   const handleSuccess = (message: string) => {
     setShowCreateOutfitModal(false);
     setSuccessMessage('Outfit Posted! 🎉'); // Fixed message like before
@@ -338,7 +338,7 @@ export default function HomePage() {
     }, 2000);
   }
 
-  // NEW: Function to properly close the create/edit outfit modal
+  
   const handleCloseCreateModal = () => {
     setShowCreateOutfitModal(false)
     resetOutfitForm()
@@ -454,7 +454,7 @@ export default function HomePage() {
     <>
       <div className={`min-h-screen bg-[#F5F3EC] flex transition-all duration-200 ${showSettingsModal || showAddTabModal || showCreateOutfitModal || showOutfitModal || showDeleteModal || showDeleteOutfitModal || showCamera || successMessage ? 'blur-sm' : ''}`}>
         
-        {/* Use Universal Sidebar Component */}
+        
         <Sidebar 
           user={user} 
           onShowSettings={() => setShowSettingsModal(true)}
@@ -872,7 +872,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Camera View */}
+      
       {showCamera && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
           <div className="relative w-full max-w-2xl">
@@ -903,7 +903,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Hidden canvas for taking photos */}
+      
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Delete Tab Modal */}
@@ -939,7 +939,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Add Tab Modal */}
+      
       {showAddTabModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-white/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-md rounded-lg p-6 w-96 shadow-xl border border-white/20">
@@ -980,7 +980,7 @@ export default function HomePage() {
         </div>
       )}
       
-      {/* Delete Outfit Modal - Softer, more seamless blur */}
+      
       {showDeleteOutfitModal && outfitToDelete && (
         <div className="fixed inset-0 backdrop-blur-md bg-black/5 flex items-center justify-center z-50">
           <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 w-96 shadow-2xl border border-white/30">

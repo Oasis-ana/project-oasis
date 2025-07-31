@@ -2,13 +2,7 @@ import { X, Camera, Upload } from 'lucide-react'
 import { useRef } from 'react'
 
 interface AddItemModalProps {
-  // Removed these props as AddItemModal will no longer directly control the camera
-  // showCamera: boolean;
-  // setShowCamera: (show: boolean) => void;
-  // videoRef: React.RefObject<HTMLVideoElement>;
-  // canvasRef: React.RefObject<HTMLCanvasElement>;
-  // takePhoto: () => void;
-  // stopCamera: () => void;
+ 
 
   selectedImage: string | null;
   setSelectedImage: (image: string | null) => void;
@@ -26,18 +20,10 @@ interface AddItemModalProps {
   isUploading: boolean;
   onClose: () => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
-  onCameraClick: () => void; // This prop is now mandatory for camera functionality
+  onCameraClick: () => void; 
 }
 
 export default function AddItemModal({
-  // Removed these destructured props
-  // showCamera,
-  // setShowCamera,
-  // videoRef,
-  // canvasRef,
-  // takePhoto,
-  // stopCamera,
-
   selectedImage,
   setSelectedImage,
   handleFileUpload,
@@ -47,16 +33,15 @@ export default function AddItemModal({
   isUploading,
   onClose,
   fileInputRef,
-  onCameraClick, // This prop is now essential
+  onCameraClick, 
 }: AddItemModalProps) {
   
   const startCamera = () => {
-    // This function now simply calls the onCameraClick prop,
-    // which the parent component (ClosetPage) uses to open the shared CameraModal.
+   
     if (onCameraClick) {
       onCameraClick();
     } else {
-      // Fallback or error message if onCameraClick is not provided (shouldn't happen if type is not optional)
+      
       alert("Camera functionality is not available. Please upload a photo.");
     }
   }
@@ -84,7 +69,7 @@ export default function AddItemModal({
               </h4>
               <div className="grid grid-cols-2 gap-4">
                 <button
-                  onClick={startCamera} // This now correctly calls onCameraClick
+                  onClick={startCamera} 
                   className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#0B2C21] hover:bg-gray-50 transition-colors"
                 >
                   <Camera className="w-12 h-12 text-gray-400 mb-3" />
@@ -131,7 +116,7 @@ export default function AddItemModal({
 
                 <div className="flex flex-col space-y-3">
                   <button
-                    onClick={startCamera} // This now correctly calls onCameraClick
+                    onClick={startCamera} 
                     className="px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     style={{ fontFamily: 'Playfair Display, serif' }}
                   >

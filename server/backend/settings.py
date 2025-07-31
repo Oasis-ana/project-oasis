@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables
+
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -57,7 +57,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-# PostgreSQL Database Configuration
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -69,7 +69,7 @@ DATABASES = {
     }
 }
 
-# REST Framework configuration
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
@@ -80,7 +80,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CORS settings for frontend connection
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -120,13 +119,13 @@ TIME_ZONE = 'America/New_York'
 USE_I18N = True
 USE_TZ = True
 
-# AWS S3 Configuration
+
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
 
-# S3 URL configuration
+
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
 AWS_DEFAULT_ACL = 'public-read'
 AWS_S3_OBJECT_PARAMETERS = {
@@ -136,10 +135,10 @@ AWS_QUERYSTRING_AUTH = False
 AWS_S3_FILE_OVERWRITE = False
 AWS_S3_URL_PROTOCOL = 'https:'
 
-# Static files
+
 STATIC_URL = 'static/'
 
-# Media files - Using S3
+
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
 

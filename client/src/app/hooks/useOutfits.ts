@@ -30,7 +30,7 @@ export const useOutfits = () => {
         const outfitData = await response.json()
         console.log('📥 Fetched outfits:', outfitData.length, 'items')
         
-        // 🔧 DEBUG: Log image URLs to see if they're correct
+        
         outfitData.forEach((outfit: any, index: number) => {
           console.log(`Outfit ${index} image:`, outfit.image)
         })
@@ -66,7 +66,7 @@ export const useOutfits = () => {
     if (!token) return
 
     try {
-      // Optimistic UI update
+      
       setOutfits(prevOutfits => 
         prevOutfits.map(outfit => 
           outfit.id === outfitId 
@@ -84,7 +84,7 @@ export const useOutfits = () => {
       })
 
       if (!response.ok) {
-        // Revert optimistic update on failure
+        
         setOutfits(prevOutfits => 
           prevOutfits.map(outfit => 
             outfit.id === outfitId 
@@ -95,7 +95,7 @@ export const useOutfits = () => {
       }
     } catch (error) {
       console.error('Error liking outfit:', error)
-      // Revert optimistic update on error
+      
       setOutfits(prevOutfits => 
         prevOutfits.map(outfit => 
           outfit.id === outfitId 

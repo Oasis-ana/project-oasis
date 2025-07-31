@@ -7,15 +7,15 @@ const API = axios.create({
   },
 })
 
-// Add request interceptor to handle auth tokens properly
+
 API.interceptors.request.use((config) => {
-  // Don't add token to public endpoints
+  
   const publicEndpoints = ['/auth/register/', '/auth/login/']
   const isPublicEndpoint = publicEndpoints.some(endpoint => 
     config.url?.includes(endpoint)
   )
   
-  // Only add auth token to protected endpoints
+  
   if (!isPublicEndpoint && typeof window !== 'undefined') {
     const token = localStorage.getItem('authToken')
     if (token) {
@@ -37,10 +37,9 @@ export const setAuthToken = (token: string | null) => {
   }
 }
 
-// Clear any old token on startup
+
 if (typeof window !== 'undefined') {
-  // Don't clear the token automatically - let users stay logged in
-  // localStorage.removeItem('authToken') // Remove this line
+ 
 }
 
 export default API

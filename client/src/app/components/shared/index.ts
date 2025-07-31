@@ -1,4 +1,4 @@
-// src/app/components/shared/index.ts
+
 
 export { default as CameraModal } from './CameraModal'
 export { default as SuccessModal } from './SuccessModal'

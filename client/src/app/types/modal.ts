@@ -1,5 +1,3 @@
-// src/app/types/modal.ts
-
 import { RefObject } from 'react'
 
 export interface ModalProps {

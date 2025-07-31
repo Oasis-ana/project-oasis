@@ -16,7 +16,7 @@ export default function LoginPage() {
    
    try {
      await login({ username, password })
-     router.push('/home') // Redirect to profile page on successful login
+     router.push('/home') 
    } catch (err: any) {
      console.error('Login failed:', err)
      console.error('Error response:', err.response?.data)

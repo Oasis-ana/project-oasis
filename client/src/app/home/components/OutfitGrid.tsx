@@ -1,4 +1,4 @@
-// OutfitGrid.tsx
+
 'use client'
 
 import OutfitCard from './OutfitCard'

@@ -1,16 +1,14 @@
-// types/outfit.ts
-
 export interface Outfit {
   id: string
   title: string
-  description?: string // Made optional as per your usage
+  description?: string 
   image: string
   tags: string[]
   category: string
   timePosted: string
   liked: boolean
   created_at: string
-  occasion?: string // <-- This is the fix. Made optional.
+  occasion?: string 
 }
 
 export interface OutfitData {

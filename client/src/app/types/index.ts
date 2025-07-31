@@ -1,12 +1,9 @@
-// src/app/types/index.ts
-
-// Re-export all types from individual files
 export * from './user'
 export * from './outfit'
 export * from './clothing'
 export * from './modal'
 
-// Hook return types
+
 export interface UseOutfitsReturn {
   outfits: any[]
   isLoadingOutfits: boolean

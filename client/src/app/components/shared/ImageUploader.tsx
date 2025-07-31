@@ -9,7 +9,7 @@ interface ImageUploaderProps {
   onImageRemove: () => void
   onCameraClick: () => void
   title?: string
-  maxSize?: number // in MB
+  maxSize?: number
 }
 
 export default function ImageUploader({ 

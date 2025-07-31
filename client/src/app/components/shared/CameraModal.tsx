@@ -1,4 +1,4 @@
-// src/app/components/shared/CameraModal.tsx
+
 import { useRef, useEffect } from 'react'
 import { X, Camera } from 'lucide-react'
 
@@ -56,22 +56,22 @@ export default function CameraModal({ isOpen, onClose, onPhotoTaken }: CameraMod
       const canvas = canvasRef.current
       const video = videoRef.current
       
-      // Set canvas dimensions to match video
+      
       canvas.width = video.videoWidth
       canvas.height = video.videoHeight
       
       const ctx = canvas.getContext('2d')
       if (ctx) {
-        // Draw the video frame to canvas
+        
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
         
-        // Convert to base64
+        
         const imageData = canvas.toDataURL('image/jpeg', 0.8)
         
-        // Pass the image data back to parent component
+        
         onPhotoTaken(imageData)
         
-        // Close the camera modal
+       
         onClose()
       }
     }

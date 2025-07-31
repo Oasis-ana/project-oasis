@@ -9,7 +9,7 @@ class MediaStorage(S3Boto3Storage):
     file_overwrite = False
     
     def _save(self, name, content):
-        # Ensure we're working with relative paths only
+        
         if name.startswith('/'):
             name = name[1:]
         return super()._save(name, content)

@@ -26,7 +26,7 @@ export default function SignupPage() {
       ...(name === 'first_name' && { username: value.toLowerCase().replace(/\s+/g, '') })
     })
     
-    // Clear password error when user types
+    
     if (name === 'password' || name === 'password_confirm') {
       setPasswordError('')
     }

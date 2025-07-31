@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from .models import UserProfile, ClothingItem, Outfit  # Import models, don't define them
+from .models import UserProfile, ClothingItem, Outfit  
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
@@ -68,7 +68,7 @@ class ClothingItemSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         
-        # Always prioritize the uploaded image over URL reference
+        
         if instance.image:
             data['image'] = instance.image.url
         elif instance.image_url:

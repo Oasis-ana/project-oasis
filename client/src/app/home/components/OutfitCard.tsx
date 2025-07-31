@@ -22,7 +22,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
       className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer transform hover:scale-[1.02] duration-300 relative group"
       onClick={() => onClick(outfit)}
     >
-      {/* Image with time badge and action buttons */}
+      
       <div className="relative bg-gray-100">
         {!imageLoaded && !imageError && (
           <div 
@@ -120,7 +120,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
         </span>
       </div>
 
-      {/* Edit and Delete buttons on hover */}
+      {/* Edit and Delete buttons */}
       {imageLoaded && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <button

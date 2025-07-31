@@ -27,7 +27,7 @@ export default function OutfitCard({ outfit, onLike, onClick, formatTimePosted }
       className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer transform hover:scale-[1.02] duration-300"
       onClick={() => onClick(outfit)}
     >
-      {/* Image with time badge - Pinterest-style tall aspect ratio */}
+      
       <div className="relative">
         <img
           src={outfit.image}
@@ -39,7 +39,7 @@ export default function OutfitCard({ outfit, onLike, onClick, formatTimePosted }
           {formatTimePosted(outfit.created_at)}
         </div>
         
-        {/* Like button overlay */}
+        {/* Like button  */}
         <button 
           onClick={(e) => {
             e.stopPropagation()
@@ -51,7 +51,7 @@ export default function OutfitCard({ outfit, onLike, onClick, formatTimePosted }
         </button>
       </div>
 
-      {/* Content - Compact Pinterest style */}
+      {/* Content */}
       <div className="p-4">
         <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2" style={{ fontFamily: 'Playfair Display, serif' }}>
           {outfit.title}

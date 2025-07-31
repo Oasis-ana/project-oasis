@@ -25,7 +25,7 @@ export function useAuth() {
       console.error('Login error details:', JSON.stringify(err.response?.data, null, 2))
       console.error('Full error object:', err)
       
-      // More detailed error handling
+      
       let errorMessage = 'Login failed'
       
       if (err.response?.data) {

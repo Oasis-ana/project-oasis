@@ -8,7 +8,7 @@ export default function LandingPage() {
 
  return (
    <div className="min-h-screen relative">
-     {/* Clothing collage background */}
+     
      <div className="absolute inset-0">
        <Image
          src="/clothing-collage.png"
@@ -21,12 +21,12 @@ export default function LandingPage() {
        />
      </div>
 
-     {/* Milky clear overlay with your exact color */}
+     
      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(245, 243, 236, 0.7)' }}></div>
 
-     {/* Content */}
+     
      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-12">
-       {/* OASIS Logo - slightly bigger */}
+       
        <div className="mb-8">
          <div className="relative inline-block">
            <h1 className="text-9xl font-bold text-[#0B2C21] tracking-wider" style={{ 
@@ -52,7 +52,7 @@ export default function LandingPage() {
          </div>
        </div>
 
-       {/* Tagline moved teeny bit higher */}
+       
        <div className="text-center mb-12">
          <p className="text-xl text-[#0B2C21] mb-1" style={{ 
            fontFamily: 'Playfair Display, serif',
@@ -77,7 +77,7 @@ export default function LandingPage() {
          </p>
        </div>
 
-       {/* Discover button with Playfair Display */}
+      
        <button
          onClick={() => router.push('/login')}
          style={{

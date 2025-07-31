@@ -41,7 +41,7 @@ interface Outfit {
   isFavorite?: boolean
 }
 
-// SettingsModal Component
+
 function SettingsModal({ 
   isOpen, 
   onClose, 
@@ -68,7 +68,7 @@ function SettingsModal({
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Set current user data when modal opens
+  
   useEffect(() => {
     if (isOpen && currentUser) {
       setSettingsForm(prev => ({
@@ -84,13 +84,13 @@ function SettingsModal({
   const handleImageUpload = async (file: File) => {
     if (!file) return
 
-    // Validate file type
+    
     if (!file.type.startsWith('image/')) {
       setErrors({ avatar: 'Please select an image file' })
       return
     }
 
-    // Validate file size (max 5MB)
+    
     if (file.size > 5 * 1024 * 1024) {
       setErrors({ avatar: 'Image size must be less than 5MB' })
       return
@@ -115,7 +115,7 @@ function SettingsModal({
       const data = await response.json()
 
       if (response.ok) {
-        // Update user data with new avatar
+        
         onUserUpdate({
           ...currentUser,
           avatar: data.avatar
@@ -135,14 +135,14 @@ function SettingsModal({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Create preview
+      
       const reader = new FileReader()
       reader.onload = (e) => {
         setPreviewImage(e.target?.result as string)
       }
       reader.readAsDataURL(file)
 
-      // Upload image
+      
       handleImageUpload(file)
     }
   }
@@ -183,7 +183,7 @@ function SettingsModal({
       newErrors.username = 'Username must be at least 3 characters'
     }
 
-    // Password validation (only if changing password)
+    
     if (settingsForm.newPassword || settingsForm.currentPassword) {
       if (!settingsForm.currentPassword) {
         newErrors.currentPassword = 'Current password is required'
@@ -218,10 +218,10 @@ function SettingsModal({
         throw new Error('No authentication token found')
       }
 
-      // Prepare update data
+      
       const updateData: any = {}
       
-      // Only include changed fields
+      
       if (settingsForm.username.trim() !== currentUser?.username) {
         updateData.username = settingsForm.username.trim()
       }
@@ -230,7 +230,7 @@ function SettingsModal({
         updateData.bio = settingsForm.bio.trim()
       }
 
-      // Include password fields if changing password
+      
       if (settingsForm.currentPassword && settingsForm.newPassword) {
         updateData.current_password = settingsForm.currentPassword
         updateData.new_password = settingsForm.newPassword
@@ -343,7 +343,7 @@ function SettingsModal({
                 </div>
               )}
               
-              {/* Upload overlay */}
+              {/* Upload img */}
               <button
                 type="button"
                 onClick={triggerFileSelect}
@@ -679,7 +679,7 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
         </div>
 
         <div className="flex h-[calc(90vh-80px)]">
-          {/* Left Panel - Outfit Builder */}
+          {/* Left side - Outfit Builder */}
           <div className="w-1/3 p-6 border-r border-gray-200 flex flex-col">
             <div className="mb-6">
               <h3 className="text-lg font-medium text-[#0B2C21] mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -717,7 +717,7 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
               </div>
             </div>
 
-            {/* Outfit Board - Drop Zone */}
+            {/* Outfit Board aka Drop Zone fun*/}
             <div className="flex-1 overflow-y-auto">
               <h4 className="text-md font-medium text-gray-700 mb-3" style={{ fontFamily: 'Inter' }}>
                 Outfit Board ({selectedItems.length} items)
@@ -796,7 +796,7 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
             </div>
           </div>
 
-          {/* Right Panel - Closet Items */}
+          {/*  Closet Items */}
           <div className="flex-1 flex flex-col">
             
             {/* Search and Filters */}
@@ -891,7 +891,7 @@ function OutfitCreator({ isOpen, onClose, onSaveOutfit }: {
                           </p>
                         </div>
                         
-                        {/* Drag indicator */}
+                        
                         <div className="absolute top-2 left-2 opacity-0 hover:opacity-100 transition-opacity">
                           <div className="text-white text-xs bg-black bg-opacity-50 px-2 py-1 rounded">
                             Drag me!
@@ -936,17 +936,7 @@ export default function ProfilePage() {
     })
   }
 
-  // Handle Log Today's Look from sidebar - removed since not used in Sidebar
-  // const handleLogTodaysLook = () => {
-  //   router.push('/home')
-  // }
-
-  // Handle Add Item from sidebar - removed since not used in Sidebar  
-  // const handleAddItem = () => {
-  //   router.push('/closet')
-  // }
-
-  // Load cached data immediately on client side
+  
   useEffect(() => {
     setIsClient(true)
     const cached = localStorage.getItem('userProfile')
@@ -958,7 +948,7 @@ export default function ProfilePage() {
       }
     }
 
-    // Load saved outfits
+    
     const outfits = localStorage.getItem('savedOutfits')
     if (outfits) {
       try {
@@ -969,7 +959,7 @@ export default function ProfilePage() {
     }
   }, [])
 
-  // Fetch fresh data in background
+  
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -1005,7 +995,7 @@ export default function ProfilePage() {
         }
       } catch (error) {
         console.error('Network error:', error)
-        // Keep cached data, show offline mode
+        
         setIsOfflineMode(true)
         setError('Offline mode - showing cached data')
       }
@@ -1059,7 +1049,7 @@ export default function ProfilePage() {
     router.back()
   }
 
-  // Don't render until client-side hydration is complete
+  
   if (!isClient) {
     return (
       <div className="min-h-screen bg-[#F5F3EC] flex">
@@ -1073,14 +1063,14 @@ export default function ProfilePage() {
     <>
       <div className={`min-h-screen bg-[#F5F3EC] flex transition-all duration-200 ${showSettingsModal || showOutfitCreator ? 'blur-sm' : ''}`}>
         
-        {/* Updated Sidebar */}
+        {/* Sidebar */}
         <Sidebar 
           user={user} 
           onShowSettings={() => setShowSettingsModal(true)}
         />
 
         <div className="flex-1">
-          {/* Fixed header with proper spacing */}
+            {/* Profile Header */}
           <div className="flex items-center pl-24 pr-6 py-6 space-x-6">
             <ArrowLeft 
               className="w-6 h-6 text-gray-600 cursor-pointer hover:text-gray-800 transition-colors flex-shrink-0" 
@@ -1196,7 +1186,7 @@ export default function ProfilePage() {
                         className="bg-white rounded-xl shadow-lg overflow-hidden group relative cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 ease-in-out w-full max-w-xs"
                         onClick={() => handleViewOutfit(outfit)}
                       >
-                        {/* Main outfit preview image */}
+                        
                         <div className="relative h-80 bg-gray-50 overflow-hidden">
                           <div className="absolute inset-0 flex items-center justify-center p-4">
                             {outfit.items.length === 1 ? (
@@ -1332,7 +1322,7 @@ export default function ProfilePage() {
                             {outfit.title}
                           </h4>
                           
-                          {/* Tags/Category */}
+                          {/* Tags */}
                           <div className="mb-3">
                             <span className="inline-block bg-[#0B2C21] text-white text-xs px-3 py-1 rounded-full">
                               {outfit.items.length} items
@@ -1346,7 +1336,7 @@ export default function ProfilePage() {
                           )}
                           
                           {/* Date at bottom */}
-                          <p className="text-xs text-gray-400" style={{ fontFamily: 'Inter' }}>
+                          <p className="text-xs text-gray-700" style={{ fontFamily: 'Inter' }}>
                             {new Date(outfit.createdAt).toLocaleDateString()}
                           </p>
                         </div>
@@ -1360,7 +1350,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Settings Modal */}
+      
       <SettingsModal 
         isOpen={showSettingsModal} 
         onClose={() => setShowSettingsModal(false)}
@@ -1369,14 +1359,14 @@ export default function ProfilePage() {
         isOfflineMode={isOfflineMode}
       />
 
-      {/* Outfit Creator Modal */}
+      
       <OutfitCreator
         isOpen={showOutfitCreator}
         onClose={() => setShowOutfitCreator(false)}
         onSaveOutfit={handleSaveOutfit}
       />
 
-      {/* Outfit View Modal */}
+      
       {showOutfitModal && selectedOutfitForView && (
         <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-xl border border-white/20">

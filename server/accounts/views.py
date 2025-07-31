@@ -11,8 +11,6 @@ from PIL import Image
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-# NOTE: Make sure you DO NOT have any model definitions in this views.py file
-# All models should ONLY be in models.py
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -176,10 +174,10 @@ def upload_avatar(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# ============ UPDATED CLOTHING ITEMS VIEWS ============
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
-@parser_classes([MultiPartParser, FormParser, JSONParser])  # Added JSONParser for URL references
+@parser_classes([MultiPartParser, FormParser, JSONParser]) 
 def clothing_items(request):
     if request.method == 'GET':
         try:
@@ -191,12 +189,12 @@ def clothing_items(request):
     
     elif request.method == 'POST':
         try:
-            # Handle both multipart (with image files) and JSON (with URL references) requests
+            
             serializer = ClothingItemSerializer(data=request.data, context={'request': request})
             if serializer.is_valid():
                 clothing_item = serializer.save()
                 
-                # Log what type of item was created for debugging
+                
                 if clothing_item.image:
                     print(f"✅ Created clothing item with uploaded image: {clothing_item.name}")
                 elif clothing_item.image_url:
@@ -212,7 +210,7 @@ def clothing_items(request):
 
 @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
-@parser_classes([MultiPartParser, FormParser, JSONParser])  # Added JSONParser for URL updates
+@parser_classes([MultiPartParser, FormParser, JSONParser])  
 def clothing_item_detail(request, item_id):
     try:
         item = ClothingItem.objects.get(id=item_id, user=request.user)
@@ -232,13 +230,13 @@ def clothing_item_detail(request, item_id):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
-        # Only delete the uploaded image file, not URL references
+        
         if item.image:
             item.image.delete()
         item.delete()
         return Response({'message': 'Item deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
-# ============ OUTFIT VIEWS ============
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
