@@ -39,8 +39,7 @@ export default function ClosetPage() {
   const [addedItems, setAddedItems] = useState<Set<string>>(new Set())
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<ClothingItem | null>(null)
-  
-  const [showAddItemModal, setShowAddItemModal] = useState(false)
+const [showAddItemModal, setShowAddItemModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [itemData, setItemData] = useState({
@@ -61,7 +60,7 @@ export default function ClosetPage() {
   const [showItemDetailsModal, setShowItemDetailsModal] = useState(false)
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<ClothingItem | null>(null)
   
-  // URL reference modal state
+
   const [showUrlModal, setShowUrlModal] = useState(false)
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<any>(null)
   const [urlReference, setUrlReference] = useState('')
@@ -106,17 +105,14 @@ export default function ClosetPage() {
     return isUrlImage(imageUrl)
   }
 
-  /
   const getProxiedImageUrl = (originalUrl: string) => {
     if (!isUrlImage(originalUrl)) {
       return originalUrl 
     }
     
-    
     return originalUrl
   }
 
-  
   const validateImageUrl = async (url: string): Promise<boolean> => {
     return new Promise((resolve) => {
       const img = new Image()
@@ -141,7 +137,6 @@ export default function ClosetPage() {
       }
     }
 
-    
     const pendingImage = localStorage.getItem('pendingItemImage')
     if (pendingImage) {
       setSelectedImage(pendingImage)
@@ -149,7 +144,6 @@ export default function ClosetPage() {
       localStorage.removeItem('pendingItemImage')
     }
 
-    
     const shouldCreateItem = localStorage.getItem('shouldCreateItem')
     if (shouldCreateItem) {
       setShowAddItemModal(true)
@@ -184,7 +178,7 @@ export default function ClosetPage() {
             size: item.size || 'Unknown',
             color: item.color || 'Unknown',
             category: item.category || 'Other',
-            image: item.image || item.image_url || '', // Backend handles prioritization
+            image: item.image || item.image_url || '',
             tags: item.tags || [],
             isFavorite: item.is_favorite || false,
             isWorn: item.is_worn || false,
@@ -501,7 +495,6 @@ export default function ClosetPage() {
     }, 3000)
   }
 
-  
   const handleAddWithUrl = (catalogItem: any) => {
     setSelectedCatalogItem(catalogItem)
     setCatalogItemData({
@@ -523,7 +516,6 @@ export default function ClosetPage() {
       return
     }
 
-    
     if (urlReference.trim()) {
       const isValidUrl = await validateImageUrl(urlReference)
       if (!isValidUrl) {
@@ -552,7 +544,7 @@ export default function ClosetPage() {
           tags: catalogItemData.tags.split(',').map(tag => tag.trim()),
           is_favorite: false,
           is_worn: false,
-          image_url: imageToSave, 
+          image_url: imageToSave,
         })
       })
 
@@ -566,7 +558,7 @@ export default function ClosetPage() {
           size: newItemData.size,
           color: newItemData.color,
           category: newItemData.category,
-          image: newItemData.image || '', 
+          image: newItemData.image || '',
           tags: newItemData.tags || [],
           isFavorite: newItemData.is_favorite || false,
           isWorn: newItemData.is_worn || false,
@@ -577,7 +569,6 @@ export default function ClosetPage() {
         setClothingItems(prev => [...prev, newItem])
         console.log('✅ Item with URL reference added successfully!')
         
-        // Visual feedback
         setAddedItems(prev => new Set([...prev, selectedCatalogItem.id]))
         setTimeout(() => {
           setAddedItems(prev => {
@@ -603,7 +594,6 @@ export default function ClosetPage() {
     }
   }
 
-  // NEW: Handle favorite toggle
   const handleToggleFavorite = async (item: ClothingItem) => {
     const token = localStorage.getItem('authToken')
     if (!token) {
@@ -613,7 +603,6 @@ export default function ClosetPage() {
 
     const newFavoriteStatus = !item.isFavorite
 
-    
     const updatedItems = clothingItems.map(clothingItem =>
       clothingItem.id === item.id
         ? { ...clothingItem, isFavorite: newFavoriteStatus }
@@ -621,7 +610,6 @@ export default function ClosetPage() {
     )
     setClothingItems(updatedItems)
 
-    
     if (selectedItemForDetails && selectedItemForDetails.id === item.id) {
       setSelectedItemForDetails({ ...selectedItemForDetails, isFavorite: newFavoriteStatus })
     }
@@ -639,7 +627,6 @@ export default function ClosetPage() {
       })
 
       if (!response.ok) {
-        // Revert the optimistic update if the request failed
         setClothingItems(clothingItems)
         if (selectedItemForDetails && selectedItemForDetails.id === item.id) {
           setSelectedItemForDetails(selectedItemForDetails)
@@ -648,7 +635,6 @@ export default function ClosetPage() {
       }
     } catch (error) {
       console.error('Error toggling favorite:', error)
-      // Revert the optimistic update
       setClothingItems(clothingItems)
       if (selectedItemForDetails && selectedItemForDetails.id === item.id) {
         setSelectedItemForDetails(selectedItemForDetails)
@@ -705,7 +691,6 @@ export default function ClosetPage() {
   }
 
   const handleCameraClickFromSidebar = () => {
-    // Just open the AddItemModal, don't go straight to camera
     setShowAddItemModal(true)
   }
 
@@ -963,7 +948,6 @@ export default function ClosetPage() {
         onShowSettings={() => {}}
       />
 
-      {/* Main Content */}
       <div className="flex-1 ml-20">
         <div className="flex items-center justify-between p-6">
           <div className="relative">
@@ -1126,14 +1110,12 @@ export default function ClosetPage() {
                                     handleImageError(item.id)
                                     console.log('Image failed to load:', item.image)
                                     
-                                    
                                     if (shouldUseCors(item.image) && e.currentTarget.crossOrigin) {
                                       console.log('Retrying without CORS...')
                                       e.currentTarget.crossOrigin = ''
                                       e.currentTarget.src = item.image
                                       return
                                     }
-                                    
                                     
                                     e.currentTarget.style.display = 'none'
                                     const parent = e.currentTarget.parentElement
@@ -1159,7 +1141,6 @@ export default function ClosetPage() {
                             {getCategoryLabel(item.category)}
                           </div>
                           
-                       
                           {isUrlImage(item.image) && (
                             <div className="absolute top-3 right-20 bg-blue-500 bg-opacity-80 text-white px-2 py-1 rounded text-xs font-medium flex items-center space-x-1">
                               <Link className="w-3 h-3" />
@@ -1167,7 +1148,6 @@ export default function ClosetPage() {
                             </div>
                           )}
                           
-                          {/* Favorite Button */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
@@ -1195,7 +1175,6 @@ export default function ClosetPage() {
                           </button>
                         </div>
 
-                        {/* Card content */}
                         <div className="p-4 bg-white">
                           <h3 className="font-semibold text-gray-800 mb-2 text-lg truncate" style={{ fontFamily: 'Playfair Display, serif' }}>
                             {item.name}
@@ -1360,7 +1339,6 @@ export default function ClosetPage() {
         />
       )}
 
-      {/* URL Reference Modal */}
       {showUrlModal && selectedCatalogItem && (
         <div className="fixed inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-sm rounded-lg p-6 w-96 shadow-2xl border border-white/30 max-h-[90vh] overflow-y-auto">
@@ -1471,7 +1449,6 @@ export default function ClosetPage() {
         </div>
       )}
 
-      {/* Camera Modal */}
       <CameraModal
         isOpen={showCameraModal}
         onClose={() => setShowCameraModal(false)}

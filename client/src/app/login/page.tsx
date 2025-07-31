@@ -80,7 +80,7 @@ export default function LoginPage() {
                    left: '16px',
                    pointerEvents: 'none'
                  }}>
-                   Email <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
+                   Username <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
                  </span>
                )}
                <input
