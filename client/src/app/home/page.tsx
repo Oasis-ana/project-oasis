@@ -1,13 +1,14 @@
+// src/app/homepage/page.tsx
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, Home, Camera, Bell, Settings, Plus, Upload, X, Heart, Trash2, Edit } from 'lucide-react'
+import { Search, Plus, X, Heart, Trash2, Edit, Camera, Upload, Home, Bell, Settings } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useOutfits } from '../hooks/useOutfits'
 import { useCamera } from '../hooks/useCamera'
 import SettingsModal from '../profile/SettingsModal'
-import { CameraModal, SuccessModal } from '../components/shared'
 import OutfitGrid from '../home/components/OutfitGrid'
+import Sidebar from '../components/shared/Sidebar'
 import { Outfit } from '../types/outfit'
 
 interface User {
@@ -45,7 +46,7 @@ export default function HomePage() {
     occasion: ''
   })
   const [isUploading, setIsUploading] = useState(false)
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   
   // Pinterest-style modal states
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null)
@@ -69,7 +70,6 @@ export default function HomePage() {
   
   // Combined list of all categories, including custom tabs
   const allCategories = Array.from(new Set([...baseCategories, ...defaultTabs, ...customTabs]));
-
 
   // Load cached data
   useEffect(() => {
@@ -99,6 +99,21 @@ export default function HomePage() {
       } catch (e) {
         console.error('Error parsing default tabs:', e)
       }
+    }
+
+    // Check for pending outfit image from camera
+    const pendingImage = localStorage.getItem('pendingOutfitImage')
+    if (pendingImage) {
+      setSelectedImage(pendingImage)
+      setShowCreateOutfitModal(true)
+      localStorage.removeItem('pendingOutfitImage')
+    }
+
+    // Check if we should open outfit creation modal
+    const shouldCreateOutfit = localStorage.getItem('shouldCreateOutfit')
+    if (shouldCreateOutfit) {
+      setShowCreateOutfitModal(true)
+      localStorage.removeItem('shouldCreateOutfit')
     }
   }, [])
 
@@ -147,11 +162,13 @@ export default function HomePage() {
   }
 
   // Tab and search management
-  const tabs = ['All Outfits', ...defaultTabs, ...customTabs, '+ Add Tab']
+  const tabs = ['All Outfits', 'Favorites', ...defaultTabs, ...customTabs, '+ Add Tab']
   
   // First, filter by the active tab
   const tabFilteredOutfits = activeTab === 'All Outfits' 
     ? outfits 
+    : activeTab === 'Favorites'
+    ? outfits.filter(outfit => outfit.liked)
     : outfits.filter(outfit => outfit.category === activeTab);
 
   // Then, filter the results by the search query
@@ -185,7 +202,7 @@ export default function HomePage() {
 
     const tabName = newTabName.trim()
     
-    if (['All Outfits', ...defaultTabs, ...customTabs].includes(tabName)) {
+    if (['All Outfits', 'Favorites', ...defaultTabs, ...customTabs].includes(tabName)) {
       alert('This tab already exists!')
       return
     }
@@ -200,7 +217,7 @@ export default function HomePage() {
   }
 
   const handleDeleteTab = (tabToDelete: string) => {
-    if (tabToDelete === 'All Outfits') return
+    if (tabToDelete === 'All Outfits' || tabToDelete === 'Favorites') return
     setTabToDelete(tabToDelete)
     setShowDeleteModal(true)
   }
@@ -307,6 +324,26 @@ export default function HomePage() {
     return true
   }
 
+  const handleCloseSuccessModal = () => {
+    setSuccessMessage(null);
+  }
+
+  // 1. UPDATE SUCCESS MESSAGE HANDLING:
+  const handleSuccess = (message: string) => {
+    setShowCreateOutfitModal(false);
+    setSuccessMessage('Outfit Posted! 🎉'); // Fixed message like before
+    resetOutfitForm(); 
+    setTimeout(() => {
+      handleCloseSuccessModal();
+    }, 2000);
+  }
+
+  // NEW: Function to properly close the create/edit outfit modal
+  const handleCloseCreateModal = () => {
+    setShowCreateOutfitModal(false)
+    resetOutfitForm()
+  }
+
   const handleSaveOrUpdateOutfit = async () => {
     if (!validateForm()) return
 
@@ -347,11 +384,8 @@ export default function HomePage() {
       }
       
       if (success) {
-        setShowSuccessMessage(true)
-        setTimeout(() => {
-          resetOutfitForm()
-          setShowSuccessMessage(false)
-        }, 2000)
+        const message = isEditing ? 'Outfit updated!' : 'Outfit saved!';
+        handleSuccess(message);
       } else {
         alert('Failed to save outfit. Please try again.')
       }
@@ -392,7 +426,6 @@ export default function HomePage() {
       tags: '',
       occasion: ''
     })
-    setShowCreateOutfitModal(false)
   }
 
   const formatTimePosted = (dateString: string) => {
@@ -419,65 +452,16 @@ export default function HomePage() {
 
   return (
     <>
-      <div className={`min-h-screen bg-[#F5F3EC] flex transition-all duration-200 ${showSettingsModal || showAddTabModal || showCreateOutfitModal || showOutfitModal || showDeleteModal || showDeleteOutfitModal || showCamera ? 'blur-sm' : ''}`}>
-        {/* Left Sidebar */}
-        <div className="w-20 bg-[#0B2C21] flex flex-col items-center py-8">
-          <div 
-            className="w-12 h-12 rounded-full mb-12 overflow-hidden cursor-pointer"
-            onClick={() => router.push('/profile')}
-          >
-            {user?.avatar ? (
-              <img src={user.avatar} alt="Profile" className="w-12 h-12 rounded-full object-cover" />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-orange-400 flex items-center justify-center">
-                <div className="w-8 h-8 rounded-full bg-orange-600"></div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col items-center flex-1">
-            <div className="flex items-center justify-center mb-14">
-              <Home className="w-6 h-6 text-white cursor-pointer fill-current" />
-            </div>
-            
-            <div 
-              className="flex items-center justify-center cursor-pointer hover:opacity-75 mb-14"
-              onClick={() => router.push('/closet')}
-            >
-              <img
-                src="/hanger-for-sidebar.png?v=2"
-                alt="Hanger"
-                className="object-contain"
-                style={{
-                  filter: 'brightness(0) invert(1)',
-                  width: '32px',
-                  height: '32px'
-                }}
-              />
-            </div>
-            
-            <div 
-              className="flex items-center justify-center cursor-pointer hover:opacity-75 mb-14"
-              onClick={handleLogTodaysLook}
-            >
-              <Camera className="w-6 h-6 text-white" />
-            </div>
-            
-            <div className="flex items-center justify-center">
-              <Bell className="w-6 h-6 text-white cursor-pointer hover:text-gray-300" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center">
-            <Settings 
-              className="w-6 h-6 text-white cursor-pointer hover:text-gray-300" 
-              onClick={() => setShowSettingsModal(true)}
-            />
-          </div>
-        </div>
+      <div className={`min-h-screen bg-[#F5F3EC] flex transition-all duration-200 ${showSettingsModal || showAddTabModal || showCreateOutfitModal || showOutfitModal || showDeleteModal || showDeleteOutfitModal || showCamera || successMessage ? 'blur-sm' : ''}`}>
+        
+        {/* Use Universal Sidebar Component */}
+        <Sidebar 
+          user={user} 
+          onShowSettings={() => setShowSettingsModal(true)}
+        />
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 ml-20">
           <div className="flex items-center justify-between p-6">
             <div className="flex items-center">
               <h1 style={{ 
@@ -502,29 +486,31 @@ export default function HomePage() {
                       transform: 'translateX(-50%) rotate(12deg)'
                     }}
                   />
-                </span>utfit Of The Day
+                </span>
+                utfit Of The Day
               </h1>
             </div>
 
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+                <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search your outfits"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-white border-2 border-gray-300 rounded-full py-3 pl-12 pr-4 text-gray-600 focus:outline-none focus:border-gray-400 shadow-md text-sm"
-                  style={{ width: '320px' }}
+                  className="bg-white border-2 border-gray-300 rounded-full py-3 pl-12 pr-4 text-gray-600 focus:outline-none focus:border-gray-400 shadow-md text-sm w-80"
+                  style={{ fontFamily: 'Inter' }}
                 />
               </div>
 
               <button 
                 onClick={handleLogTodaysLook}
                 className="bg-[#0B2C21] text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:opacity-90 shadow-md"
+                style={{ fontFamily: 'Inter', fontSize: '14px', fontWeight: '500' }}
               >
                 <Plus className="w-4 h-4" />
-                <span style={{ fontFamily: 'Inter', fontSize: '14px', fontWeight: '500' }}>
+                <span>
                   Log Today's Look
                 </span>
               </button>
@@ -532,20 +518,18 @@ export default function HomePage() {
           </div>
 
           <div className="px-6 pt-4">
-            <div className="flex space-x-3 mb-6">
+            <div className="flex flex-wrap gap-3 mb-6">
                 {tabs.map((tab) => {
-                    const isSpecialTab = tab === 'All Outfits' || tab === '+ Add Tab'
+                    const isSpecialTab = tab === 'All Outfits' || tab === 'Favorites' || tab === '+ Add Tab'
                     const isSelected = activeTab === tab
                     
                     let tabClasses = `flex items-center space-x-1 px-4 py-3 rounded-lg text-sm font-medium transition-all group `
 
                     if (isSelected) {
-                        // Style for the selected tab
                         tabClasses += isSpecialTab 
                             ? 'bg-[#0B2C21] text-white shadow-inner transform translate-y-1' 
                             : 'bg-transparent text-[#0B2C21] shadow-inner shadow-gray-900/30 transform translate-y-1'
                     } else {
-                        // Style for all non-selected tabs
                         tabClasses += 'bg-gray-100 text-gray-600 hover:bg-gray-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
                     }
 
@@ -563,7 +547,7 @@ export default function HomePage() {
                             style={{ fontFamily: 'Playfair Display, serif' }}
                             title={!isSpecialTab ? 'Right-click to delete' : ''}
                         >
-                            <span>{tab}</span>
+                            <span>{tab === 'Favorites' ? 'Favorites ❤️' : tab}</span>
                             {!isSpecialTab && (
                                 <span 
                                     className="w-4 h-4 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer hover:text-red-500"
@@ -647,7 +631,7 @@ export default function HomePage() {
 
               <div className="mb-6">
                 <span className="inline-block px-4 py-2 bg-[#0B2C21] text-white rounded-full font-semibold">
-                  📂 {selectedOutfit.category}
+                   {selectedOutfit.category}
                 </span>
               </div>
 
@@ -671,7 +655,7 @@ export default function HomePage() {
               )}
 
               <div className="text-sm text-gray-500 border-t pt-4" style={{ fontFamily: 'Inter' }}>
-                📅 Posted {formatTimePosted(selectedOutfit.created_at)}
+                 Posted {formatTimePosted(selectedOutfit.created_at)}
               </div>
               
               <div className="mt-6 flex justify-end space-x-2">
@@ -697,11 +681,11 @@ export default function HomePage() {
         <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-md rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-white/20">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-800" style={{ fontFamily: 'Playfair Display, serif', color: '#0B2C21' }}>
+              <h3 className="text-xl font-semibold text-[#0B2C21]" style={{ fontFamily: 'Playfair Display, serif' }}>
                 {isEditing ? 'Edit Outfit' : 'Log Today\'s Look'}
               </h3>
               <button
-                onClick={resetOutfitForm}
+                onClick={handleCloseCreateModal}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500" />
@@ -711,7 +695,7 @@ export default function HomePage() {
             <div className="p-6">
               {!selectedImage ? (
                 <div className="mb-6">
-                  <h4 className="text-lg font-medium text-gray-800 mb-4" style={{ fontFamily: 'Playfair Display, serif', color: '#0B2C21' }}>
+                  <h4 className="text-lg font-medium text-[#0B2C21] mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
                     Add Outfit Photo
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
@@ -781,7 +765,7 @@ export default function HomePage() {
 
                   <div className="space-y-6">
                     <div>
-                      <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Playfair Display, serif', color: '#0B2C21' }}>
+                      <label htmlFor="title" className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
                         Title
                       </label>
                       <input
@@ -796,7 +780,7 @@ export default function HomePage() {
                     </div>
 
                     <div>
-                      <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Playfair Display, serif', color: '#0B2C21' }}>
+                      <label htmlFor="description" className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
                         Description (optional)
                       </label>
                       <textarea
@@ -811,7 +795,7 @@ export default function HomePage() {
                     </div>
 
                     <div>
-                      <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Playfair Display, serif', color: '#0B2C21' }}>
+                      <label htmlFor="category" className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
                         Category
                       </label>
                       <select
@@ -828,7 +812,7 @@ export default function HomePage() {
                     </div>
                     
                     <div>
-                      <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Playfair Display, serif', color: '#0B2C21' }}>
+                      <label htmlFor="tags" className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
                         Tags (optional)
                       </label>
                       <input
@@ -840,131 +824,113 @@ export default function HomePage() {
                         placeholder="e.g., blazer, jeans, boots"
                         style={{ fontFamily: 'Inter' }}
                       />
-                      <p className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Playfair Display, serif' }}>
-                        Separate tags with commas.
+                      <p className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Inter' }}>
+                        Separate tags with commas
                       </p>
                     </div>
-
-                    <div>
-                      <label htmlFor="occasion" className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Playfair Display, serif', color: '#0B2C21' }}>
-                        Occasion (optional)
-                      </label>
-                      <input
-                        type="text"
-                        id="occasion"
-                        value={outfitData.occasion}
-                        onChange={(e) => handleInputChange('occasion', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] placeholder-gray-700 text-gray-900"
-                        placeholder="e.g., Birthday dinner"
-                        style={{ fontFamily: 'Inter' }}
-                      />
-                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end mt-8">
+                    <button
+                      onClick={handleSaveOrUpdateOutfit}
+                      disabled={isUploading || !selectedImage || !outfitData.title}
+                      className={`px-6 py-3 rounded-full flex items-center space-x-2 font-medium text-sm transition-all ${
+                        isUploading || !selectedImage || !outfitData.title 
+                          ? 'bg-gray-400 text-white cursor-not-allowed'
+                          : 'bg-[#0B2C21] text-white hover:opacity-90'
+                      }`}
+                      style={{ fontFamily: 'Inter' }}
+                    >
+                      {isUploading ? 'Saving...' : (isEditing ? 'Update Outfit' : 'Save Outfit')}
+                    </button>
                   </div>
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
 
-            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                onClick={resetOutfitForm}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-                style={{ fontFamily: 'Playfair Display, serif' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveOrUpdateOutfit}
-                className="px-4 py-2 text-sm font-medium text-white bg-[#0B2C21] rounded-lg hover:opacity-90 transition-opacity"
-                style={{ fontFamily: 'Playfair Display, serif' }}
-                disabled={isUploading || !selectedImage}
-              >
-                {isUploading ? (isEditing ? 'Updating...' : 'Saving...') : (isEditing ? 'Update Outfit' : 'Save Outfit')}
-              </button>
+      {/* Success Modal */}
+      {successMessage && (
+        <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
+          <div className="bg-white/95 backdrop-blur-md rounded-lg p-8 shadow-xl border border-white/20 max-w-sm w-full text-center">
+            <div className="mb-4">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
+                Outfit Posted! 🎉
+              </h3>
+              <p className="text-gray-600" style={{ fontFamily: 'Inter' }}>
+                Your look is now live in your feed!
+              </p>
             </div>
           </div>
         </div>
       )}
 
-      <CameraModal 
-        isOpen={showCamera} 
-        videoRef={videoRef} 
-        onTakePhoto={handleTakePhoto} 
-        onClose={stopCamera} 
-      />
-      
-      {showSuccessMessage && (
-        <SuccessModal
-          isOpen={true}
-          title="Outfit Saved!"
-          message="Your new outfit has been added to your collection."
-          onClose={() => setShowSuccessMessage(false)}
-        />
-      )}
-      
-      {showAddTabModal && (
-        <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 shadow-xl max-w-sm mx-4">
-            <h3 className="text-xl font-semibold mb-4" style={{ fontFamily: 'Playfair Display, serif', color: '#0B2C21' }}>
-              Add New Tab
-            </h3>
-            <p className="text-sm text-gray-600 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Give your new outfit category a name.
-            </p>
-            <input
-              type="text"
-              value={newTabName}
-              onChange={(e) => setNewTabName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-gray-900 placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0B2C21]"
-              placeholder="e.g., Summer"
-              style={{ fontFamily: 'Inter' }}
+      {/* Camera View */}
+      {showCamera && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <div className="relative w-full max-w-2xl">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full rounded-lg"
             />
-            <div className="flex justify-end space-x-2">
+            
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-4">
               <button
-                onClick={() => {
-                  setShowAddTabModal(false)
-                  setNewTabName('')
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
-                style={{ fontFamily: 'Playfair Display, serif' }}
+                onClick={handleTakePhoto}
+                className="bg-white text-black px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
+                style={{ fontFamily: 'Inter' }}
               >
-                Cancel
+                Take Photo
               </button>
               <button
-                onClick={handleCreateTab}
-                className="px-4 py-2 text-sm font-medium text-white bg-[#0B2C21] rounded-lg hover:opacity-90"
-                style={{ fontFamily: 'Playfair Display, serif' }}
+                onClick={stopCamera}
+                className="bg-gray-800 text-white px-6 py-3 rounded-full font-medium hover:bg-gray-700 transition-colors"
+                style={{ fontFamily: 'Inter' }}
               >
-                Create
+                Cancel
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Hidden canvas for taking photos */}
+      <canvas ref={canvasRef} className="hidden" />
+
+      {/* Delete Tab Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 shadow-xl max-w-sm mx-4">
-            <h3 className="text-xl font-semibold mb-4" style={{ fontFamily: 'Playfair Display, serif', color: '#0B2C21' }}>
-              Delete Tab
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/20 flex items-center justify-center z-50">
+          <div className="bg-white/95 backdrop-blur-md rounded-lg p-6 w-96 shadow-xl border border-white/20">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+              Delete Category
             </h3>
-            <p className="text-sm text-gray-600 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Are you sure you want to delete the **{tabToDelete}** tab? This will not delete your outfits, but they will no longer be categorized under this tab.
+            <p className="text-gray-600 mb-6" style={{ fontFamily: 'Inter' }}>
+              Are you sure you want to delete the "{tabToDelete}" category? This action cannot be undone.
             </p>
-            <div className="flex justify-end space-x-2">
+            <div className="flex space-x-3">
               <button
                 onClick={() => {
                   setShowDeleteModal(false)
                   setTabToDelete('')
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
-                style={{ fontFamily: 'Playfair Display, serif' }}
+                className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                style={{ fontFamily: 'Inter' }}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeleteTab}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
-                style={{ fontFamily: 'Playfair Display, serif' }}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                style={{ fontFamily: 'Inter' }}
               >
                 Delete
               </button>
@@ -972,28 +938,70 @@ export default function HomePage() {
           </div>
         </div>
       )}
-      
-      {showDeleteOutfitModal && outfitToDelete && (
-        <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 shadow-xl max-w-sm mx-4">
-            <h3 className="text-xl font-semibold mb-4" style={{ fontFamily: 'Playfair Display, serif', color: '#0B2C21' }}>
-              Confirm Delete
+
+      {/* Add Tab Modal */}
+      {showAddTabModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/20 flex items-center justify-center z-50">
+          <div className="bg-white/95 backdrop-blur-md rounded-lg p-6 w-96 shadow-xl border border-white/20">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+              Create New Category
             </h3>
-            <p className="text-sm text-gray-600 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Are you sure you want to delete **{outfitToDelete.title}**? This action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-2">
+            <input
+              type="text"
+              value={newTabName}
+              onChange={(e) => setNewTabName(e.target.value)}
+              placeholder="Enter category name (e.g., Formal, Casual, Party)"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#0B2C21] text-gray-700"
+              style={{ fontFamily: 'Inter' }}
+              onKeyPress={(e) => e.key === 'Enter' && handleCreateTab()}
+              autoFocus
+            />
+            <div className="flex space-x-3 mt-6">
               <button
-                onClick={() => setShowDeleteOutfitModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
-                style={{ fontFamily: 'Playfair Display, serif' }}
+                onClick={() => {
+                  setShowAddTabModal(false)
+                  setNewTabName('')
+                }}
+                className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                style={{ fontFamily: 'Inter' }}
               >
                 Cancel
               </button>
               <button
+                onClick={handleCreateTab}
+                disabled={!newTabName.trim()}
+                className="flex-1 px-4 py-2 bg-[#0B2C21] text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                style={{ fontFamily: 'Inter' }}
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Delete Outfit Modal - Softer, more seamless blur */}
+      {showDeleteOutfitModal && outfitToDelete && (
+        <div className="fixed inset-0 backdrop-blur-md bg-black/5 flex items-center justify-center z-50">
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 w-96 shadow-2xl border border-white/30">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+              Delete Outfit
+            </h3>
+            <p className="text-gray-600 mb-6" style={{ fontFamily: 'Inter' }}>
+              Are you sure you want to delete the <span className="font-bold text-gray-800">"{outfitToDelete.title}"</span> outfit? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setShowDeleteOutfitModal(false)}
+                className="flex-1 px-4 py-2 text-gray-600 bg-gray-100/80 rounded-lg hover:bg-gray-200/80 transition-colors backdrop-blur-sm"
+                style={{ fontFamily: 'Inter' }}
+              >
+                Cancel
+              </button>
+              <button 
                 onClick={confirmDeleteOutfit}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
-                style={{ fontFamily: 'Playfair Display, serif' }}
+                className="flex-1 px-4 py-2 bg-red-500/90 text-white rounded-lg hover:bg-red-600/90 transition-colors backdrop-blur-sm"
+                style={{ fontFamily: 'Inter' }}
               >
                 Delete
               </button>

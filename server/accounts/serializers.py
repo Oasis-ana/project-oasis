@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from .models import UserProfile, ClothingItem, Outfit
+from .models import UserProfile, ClothingItem, Outfit  # Import models, don't define them
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
@@ -56,7 +56,7 @@ class ClothingItemSerializer(serializers.ModelSerializer):
         model = ClothingItem
         fields = [
             'id', 'name', 'brand', 'size', 'color', 'category', 
-            'image', 'tags', 'is_favorite', 'is_worn', 
+            'image', 'image_url', 'tags', 'is_favorite', 'is_worn', 
             'last_worn', 'created_at', 'updated_at'
         ]
         read_only_fields = ('id', 'created_at', 'updated_at')
@@ -64,6 +64,19 @@ class ClothingItemSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        
+        # Always prioritize the uploaded image over URL reference
+        if instance.image:
+            data['image'] = instance.image.url
+        elif instance.image_url:
+            data['image'] = instance.image_url
+        else:
+            data['image'] = None
+            
+        return data
 
 class OutfitSerializer(serializers.ModelSerializer):
     class Meta:

@@ -12,7 +12,7 @@ urlpatterns = [
     path('update-profile/', views.update_profile, name='update_profile'),
     path('upload-avatar/', views.upload_avatar, name='upload_avatar'),
     
-    # Clothing Items URLs
+    # Clothing Items URLs (Updated to support URL references)
     path('clothing-items/', views.clothing_items, name='clothing_items'),
     path('clothing-items/<int:item_id>/', views.clothing_item_detail, name='clothing_item_detail'),
     

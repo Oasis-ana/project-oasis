@@ -2,16 +2,14 @@
 
 import { useState } from 'react'
 import { Heart, Edit, Trash2 } from 'lucide-react'
-import { Outfit } from '../../types/outfit' // <-- Import the correct Outfit interface
-
-// REMOVED the local Outfit interface to avoid type conflicts
+import { Outfit } from '../../types/outfit'
 
 interface OutfitCardProps {
   outfit: Outfit
   onLike: (outfitId: string) => void
   onClick: (outfit: Outfit) => void
-  onEdit: (outfit: Outfit) => void // <-- Add this prop
-  onDelete: (outfit: Outfit) => void // <-- Add this prop
+  onEdit: (outfit: Outfit) => void
+  onDelete: (outfit: Outfit) => void
   formatTimePosted: (dateString: string) => string
 }
 

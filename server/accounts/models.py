@@ -57,6 +57,8 @@ class ClothingItem(models.Model):
         blank=True,
         storage=MediaStorage()
     )
+    # NEW: Add URL reference field for external images
+    image_url = models.URLField(blank=True, null=True, help_text="URL reference for external images")
     tags = models.JSONField(default=list, blank=True)
     is_favorite = models.BooleanField(default=False)
     
@@ -71,6 +73,22 @@ class ClothingItem(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s {self.name}"
+    
+    def get_display_image(self):
+        """
+        Returns the image to display - prioritizing uploaded images over URL references
+        This ensures your bucket images always take priority
+        """
+        if self.image:
+            return self.image.url  # Your MediaStorage bucket image
+        elif self.image_url:
+            return self.image_url  # External URL reference
+        return None
+    
+    @property
+    def is_external_image(self):
+        """Check if the current display image is from an external URL"""
+        return bool(self.image_url and not self.image)
 
 class Outfit(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='outfits')
