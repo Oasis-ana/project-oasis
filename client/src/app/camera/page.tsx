@@ -1,4 +1,4 @@
- 'use client'
+'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Camera, Upload, X, Check, Save, Shirt, Package, Crown, ShirtIcon, Star, Zap } from 'lucide-react'
@@ -8,6 +8,9 @@ interface User {
   username: string
   avatar?: string
 }
+
+// Add API URL configuration
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
 
 export default function AddItemPage() {
   const [user, setUser] = useState<User | null>(null)
@@ -171,7 +174,8 @@ export default function AddItemPage() {
       formData.append('times_worn', '0')
       formData.append('image', blob, 'clothing-item.jpg')
 
-      const response = await fetch('http://localhost:8000/api/auth/clothing-items/', {
+      // FIXED: Use environment variable instead of hardcoded localhost
+      const response = await fetch(`${API_URL}/api/auth/clothing-items/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,

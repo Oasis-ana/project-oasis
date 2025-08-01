@@ -129,11 +129,11 @@ export default function HomePage() {
       return
     }
 
-    // ⭐ FIX: Use the environment variable for the API URL
+ 
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
 
     try {
-      // Corrected the fetch URL to use the API_URL variable
+      
       const response = await fetch(`${API_URL}/api/auth/profile/`, {
         method: 'GET',
         headers: {

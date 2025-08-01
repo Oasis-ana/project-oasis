@@ -22,6 +22,9 @@ interface SettingsModalProps {
   isOfflineMode?: boolean
 }
 
+// Add API URL configuration
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
+
 export default function SettingsModal({ 
   isOpen, 
   onClose, 
@@ -75,7 +78,8 @@ export default function SettingsModal({
       formData.append('avatar', file)
 
       const token = localStorage.getItem('authToken')
-      const response = await fetch('http://localhost:8000/api/auth/upload-avatar/', {
+      // FIXED: Use environment variable instead of hardcoded localhost
+      const response = await fetch(`${API_URL}/api/auth/upload-avatar/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -123,7 +127,8 @@ export default function SettingsModal({
     try {
       const token = localStorage.getItem('authToken')
       if (token) {
-        await fetch('http://localhost:8000/api/auth/logout/', {
+        // FIXED: Use environment variable instead of hardcoded localhost
+        await fetch(`${API_URL}/api/auth/logout/`, {
           method: 'POST',
           headers: {
             'Authorization': `Token ${token}`,
@@ -200,7 +205,8 @@ export default function SettingsModal({
         updateData.new_password = settingsForm.newPassword
       }
 
-      const response = await fetch('http://localhost:8000/api/auth/update-profile/', {
+      // FIXED: Use environment variable instead of hardcoded localhost
+      const response = await fetch(`${API_URL}/api/auth/update-profile/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Token ${token}`,

@@ -1,5 +1,3 @@
-// components/profile/ProfileHeader.tsx
-
 import { Plus, Shirt, Camera } from 'lucide-react'
 import React, { RefObject } from 'react' // Import RefObject
 

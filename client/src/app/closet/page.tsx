@@ -89,8 +89,7 @@ export default function ClosetPage() {
   const isUrlImage = (imageUrl: string) => {
     if (!imageUrl) return false
     
-    // ⭐ FIX: This logic now dynamically uses your API_BASE_URL.
-    // It no longer contains a hardcoded 'localhost:8000'.
+   
     const isMediaStorageImage =
       imageUrl.includes('.amazonaws.com') ||
       imageUrl.includes('cloudfront.net') ||

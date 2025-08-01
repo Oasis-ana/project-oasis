@@ -34,6 +34,9 @@ interface OutfitCreatorProps {
   onSaveOutfit: (outfit: Outfit) => void
 }
 
+// Add API URL configuration
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
+
 export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitCreatorProps) {
   const [closetItems, setClosetItems] = useState<ClothingItem[]>([])
   const [selectedItems, setSelectedItems] = useState<ClothingItem[]>([])
@@ -63,7 +66,8 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
 
     try {
       setIsLoadingItems(true)
-      const response = await fetch('http://localhost:8000/api/auth/clothing-items/', {
+      // FIXED: Use environment variable instead of hardcoded localhost
+      const response = await fetch(`${API_URL}/api/auth/clothing-items/`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${token}`,

@@ -46,6 +46,9 @@ interface Outfit {
   isFavorite?: boolean
 }
 
+// Add API URL configuration
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
+
 export default function ProfilePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [user, setUser] = useState<User | null>(null)
@@ -79,7 +82,8 @@ export default function ProfilePage() {
       formData.append('avatar', file)
 
       const token = localStorage.getItem('authToken')
-      const response = await fetch('http://localhost:8000/api/auth/upload-avatar/', {
+      // FIXED: Use environment variable instead of hardcoded localhost
+      const response = await fetch(`${API_URL}/api/auth/upload-avatar/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -146,7 +150,8 @@ export default function ProfilePage() {
           return
         }
 
-        const response = await fetch('http://localhost:8000/api/auth/profile/', {
+        // FIXED: Use environment variable instead of hardcoded localhost
+        const response = await fetch(`${API_URL}/api/auth/profile/`, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,

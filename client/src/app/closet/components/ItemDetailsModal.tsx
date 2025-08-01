@@ -24,19 +24,20 @@ interface ItemDetailsModalProps {
   onDelete: () => void
 }
 
+// Add API URL configuration
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
+
 export default function ItemDetailsModal({ item, onClose, onToggleWear, onUpdateItem, onDelete }: ItemDetailsModalProps) {
   const [itemData, setItemData] = useState(item)
   const [isEditing, setIsEditing] = useState(false)
   const [newTag, setNewTag] = useState('')
   const [imageError, setImageError] = useState(false)
 
-  
   useEffect(() => {
     setItemData(item);
     setImageError(false);
   }, [item]);
 
-  
   const isUrlImage = (imageUrl: string) => {
     if (!imageUrl) return false
     const isMediaStorageImage = 
@@ -44,7 +45,8 @@ export default function ItemDetailsModal({ item, onClose, onToggleWear, onUpdate
       imageUrl.includes('cloudfront.net') ||
       imageUrl.startsWith('/media/') ||
       imageUrl.includes('storage.googleapis') ||
-      imageUrl.includes('localhost:8000') ||
+      // FIXED: Use environment variable instead of hardcoded localhost
+      imageUrl.includes(API_URL) ||
       !imageUrl.startsWith('http')
     
     return imageUrl.startsWith('http') && !isMediaStorageImage
