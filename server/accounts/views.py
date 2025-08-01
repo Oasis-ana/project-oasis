@@ -5,17 +5,11 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
-from django.db import transaction
-from django.core.exceptions import ValidationError
-import logging
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer, ClothingItemSerializer, OutfitSerializer
 from .models import UserProfile, ClothingItem, Outfit
 from PIL import Image
 import io
 from django.core.files.uploadedfile import InMemoryUploadedFile
-
-
-logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
@@ -66,8 +60,7 @@ def logout(request):
     try:
         request.user.auth_token.delete()
         return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
-    except Exception as e:
-        logger.error(f"Logout error for user {request.user.id}: {str(e)}")
+    except:
         return Response({'error': 'Error logging out'}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -79,7 +72,6 @@ def profile(request):
         serializer = UserProfileSerializer(profile)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
-        logger.error(f"Profile retrieval error for user {request.user.id}: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -87,58 +79,56 @@ def profile(request):
 @permission_classes([IsAuthenticated])
 def update_profile(request):
     try:
-        with transaction.atomic():
-            if 'username' in request.data:
-                new_username = request.data['username'].strip()
-                if new_username and new_username != request.user.username:
-                    if User.objects.filter(username=new_username).exclude(id=request.user.id).exists():
-                        return Response({
-                            'error': 'Username already exists'
-                        }, status=status.HTTP_400_BAD_REQUEST)
-                    
-                    request.user.username = new_username
-                    request.user.save()
-            
-            if 'current_password' in request.data and 'new_password' in request.data:
-                current_password = request.data['current_password']
-                new_password = request.data['new_password']
-                
-                if not request.user.check_password(current_password):
+        if 'username' in request.data:
+            new_username = request.data['username'].strip()
+            if new_username and new_username != request.user.username:
+                if User.objects.filter(username=new_username).exclude(id=request.user.id).exists():
                     return Response({
-                        'error': 'Current password is incorrect'
+                        'error': 'Username already exists'
                     }, status=status.HTTP_400_BAD_REQUEST)
                 
-                request.user.set_password(new_password)
+                request.user.username = new_username
                 request.user.save()
-                
-                Token.objects.filter(user=request.user).delete()
-                token = Token.objects.create(user=request.user)
+        
+        if 'current_password' in request.data and 'new_password' in request.data:
+            current_password = request.data['current_password']
+            new_password = request.data['new_password']
             
-            profile, created = UserProfile.objects.get_or_create(user=request.user)
+            if not request.user.check_password(current_password):
+                return Response({
+                    'error': 'Current password is incorrect'
+                }, status=status.HTTP_400_BAD_REQUEST)
             
-            if 'bio' in request.data:
-                profile.bio = request.data['bio']
+            request.user.set_password(new_password)
+            request.user.save()
             
-            if 'first_name' in request.data:
-                request.user.first_name = request.data['first_name']
-                request.user.save()
-            
-            if 'last_name' in request.data:
-                request.user.last_name = request.data['last_name']
-                request.user.save()
-            
-            profile.save()
-            
-            serializer = UserProfileSerializer(profile)
-            response_data = serializer.data
-            
-            if 'current_password' in request.data and 'new_password' in request.data:
-                response_data['new_token'] = token.key
-            
-            return Response(response_data, status=status.HTTP_200_OK)
+            Token.objects.filter(user=request.user).delete()
+            token = Token.objects.create(user=request.user)
+        
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        
+        if 'bio' in request.data:
+            profile.bio = request.data['bio']
+        
+        if 'first_name' in request.data:
+            request.user.first_name = request.data['first_name']
+            request.user.save()
+        
+        if 'last_name' in request.data:
+            request.user.last_name = request.data['last_name']
+            request.user.save()
+        
+        profile.save()
+        
+        serializer = UserProfileSerializer(profile)
+        response_data = serializer.data
+        
+        if 'current_password' in request.data and 'new_password' in request.data:
+            response_data['new_token'] = token.key
+        
+        return Response(response_data, status=status.HTTP_200_OK)
         
     except Exception as e:
-        logger.error(f"Profile update error for user {request.user.id}: {str(e)}")
         return Response({
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -149,14 +139,14 @@ def update_profile(request):
 @parser_classes([MultiPartParser, FormParser])
 def upload_avatar(request):
     try:
-        logger.info(f"Starting avatar upload for user: {request.user.username}")
+        print(f"🔍 Starting avatar upload for user: {request.user.username}")
         
-     
+        # Check if file is provided
         if 'avatar' not in request.FILES:
             return Response({'error': 'No image file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         avatar_file = request.FILES['avatar']
-        logger.info(f"File received: {avatar_file.name}, size: {avatar_file.size}, type: {avatar_file.content_type}")
+        print(f"📁 File received: {avatar_file.name}, size: {avatar_file.size}, type: {avatar_file.content_type}")
         
         # Validate file type
         if not avatar_file.content_type.startswith('image/'):
@@ -173,23 +163,32 @@ def upload_avatar(request):
             getattr(settings, 'AWS_SECRET_ACCESS_KEY', None), 
             getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
         ])
+        print(f"🔧 AWS configured: {aws_configured}")
         
         if not aws_configured:
-            logger.error("AWS Configuration missing")
+            print("❌ AWS Configuration missing:")
+            print(f"  - AWS_ACCESS_KEY_ID: {'✓' if getattr(settings, 'AWS_ACCESS_KEY_ID', None) else '✗'}")
+            print(f"  - AWS_SECRET_ACCESS_KEY: {'✓' if getattr(settings, 'AWS_SECRET_ACCESS_KEY', None) else '✗'}")
+            print(f"  - AWS_STORAGE_BUCKET_NAME: {'✓' if getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None) else '✗'}")
             return Response({'error': 'AWS S3 not properly configured'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-     
+        # Process image
+        print("🖼️ Processing image...")
         try:
             image = Image.open(avatar_file)
+            print(f"Original image mode: {image.mode}, size: {image.size}")
             
             if image.mode in ("RGBA", "P"):
                 image = image.convert("RGB")
+                print("Converted image to RGB")
             
             image.thumbnail((400, 400), Image.Resampling.LANCZOS)
+            print(f"Thumbnail created, new size: {image.size}")
             
             output = io.BytesIO()
             image.save(output, format='JPEG', quality=85)
             output.seek(0)
+            print(f"✅ Image processed, final size: {output.tell()} bytes")
             
             resized_file = InMemoryUploadedFile(
                 output, 'ImageField', f"{avatar_file.name.split('.')[0]}.jpg",
@@ -197,34 +196,73 @@ def upload_avatar(request):
             )
             
         except Exception as e:
-            logger.error(f"Image processing error: {e}")
+            print(f"❌ Image processing error: {e}")
             return Response({'error': f'Image processing failed: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
         
-      
+        # Get or create user profile
+        print("👤 Getting user profile...")
         try:
-            with transaction.atomic():
-                profile, created = UserProfile.objects.get_or_create(user=request.user)
-                
-               
-                if profile.avatar:
-                    try:
-                        profile.avatar.delete(save=False)
-                    except Exception as e:
-                        logger.warning(f"Could not delete old avatar: {e}")
-                
-              
-                profile.avatar = resized_file
-                profile.save()
-                
-                serializer = UserProfileSerializer(profile)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-                
+            profile, created = UserProfile.objects.get_or_create(user=request.user)
+            print(f"Profile {'created' if created else 'found'}: {profile}")
         except Exception as e:
-            logger.error(f"Avatar save error: {e}")
+            print(f"❌ Profile creation error: {e}")
+            return Response({'error': f'Profile creation failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Delete old avatar if it exists
+        if profile.avatar:
+            print(f"🗑️ Deleting old avatar: {profile.avatar}")
+            try:
+                profile.avatar.delete(save=False)
+                print("✅ Old avatar deleted")
+            except Exception as e:
+                print(f"⚠️ Warning: Could not delete old avatar: {e}")
+        
+        # Save new avatar
+        print("💾 Saving new avatar...")
+        try:
+            profile.avatar = resized_file
+            profile.save()
+            print("✅ Avatar saved to profile")
+        except Exception as e:
+            print(f"❌ Avatar save error: {e}")
+            import traceback
+            traceback.print_exc()
             return Response({'error': f'Avatar save failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+        # Get the URL
+        avatar_url = None
+        try:
+            if profile.avatar:
+                avatar_url = profile.avatar.url
+                print(f"🔗 Avatar URL generated: {avatar_url}")
+            else:
+                print("❌ No avatar URL - profile.avatar is None")
+        except Exception as e:
+            print(f"❌ Error getting avatar URL: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        # Use serializer for response
+        try:
+            print("📋 Using serializer...")
+            serializer = UserProfileSerializer(profile)
+            serialized_data = serializer.data
+            print(f"✅ Serializer data keys: {list(serialized_data.keys())}")
+            return Response(serialized_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            print(f"❌ Serializer error: {e}")
+            import traceback
+            traceback.print_exc()
+            # Fall back to manual response
+            return Response({
+                'avatar_url': avatar_url,
+                'message': 'Avatar uploaded successfully'
+            }, status=status.HTTP_200_OK)
+        
     except Exception as e:
-        logger.error(f"Unexpected error in upload_avatar: {str(e)}")
+        print(f"💥 Unexpected error in upload_avatar: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return Response({'error': f'Upload failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -234,11 +272,10 @@ def upload_avatar(request):
 def clothing_items(request):
     if request.method == 'GET':
         try:
-            items = ClothingItem.objects.filter(user=request.user).select_related('user')
+            items = ClothingItem.objects.filter(user=request.user)
             serializer = ClothingItemSerializer(items, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            logger.error(f"Error fetching clothing items for user {request.user.id}: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     elif request.method == 'POST':
@@ -246,11 +283,18 @@ def clothing_items(request):
             serializer = ClothingItemSerializer(data=request.data, context={'request': request})
             if serializer.is_valid():
                 clothing_item = serializer.save()
-                logger.info(f"Created clothing item: {clothing_item.name} for user {request.user.id}")
+                
+                if clothing_item.image:
+                    print(f"✅ Created clothing item with uploaded image: {clothing_item.name}")
+                elif clothing_item.image_url:
+                    print(f"✅ Created clothing item with URL reference: {clothing_item.name} -> {clothing_item.image_url}")
+                else:
+                    print(f"✅ Created clothing item without image: {clothing_item.name}")
+                
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            logger.error(f"Error creating clothing item for user {request.user.id}: {str(e)}")
+            print(f"❌ Error creating clothing item: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -259,50 +303,30 @@ def clothing_items(request):
 @parser_classes([MultiPartParser, FormParser, JSONParser])  
 def clothing_item_detail(request, item_id):
     try:
-        item = ClothingItem.objects.select_related('user').get(id=item_id, user=request.user)
+        item = ClothingItem.objects.get(id=item_id, user=request.user)
     except ClothingItem.DoesNotExist:
         return Response({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        logger.error(f"Error fetching clothing item {item_id} for user {request.user.id}: {str(e)}")
-        return Response({'error': 'Database error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     if request.method == 'GET':
         serializer = ClothingItemSerializer(item)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     elif request.method in ['PUT', 'PATCH']:
-        try:
-            partial = request.method == 'PATCH'
-            serializer = ClothingItemSerializer(item, data=request.data, partial=partial)
-            if serializer.is_valid():
-                serializer.save()
-                logger.info(f"Updated clothing item {item_id} for user {request.user.id}")
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            logger.error(f"Error updating clothing item {item_id} for user {request.user.id}: {str(e)}")
-            return Response({'error': 'Update failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        partial = request.method == 'PATCH'
+        serializer = ClothingItemSerializer(item, data=request.data, partial=partial)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
         try:
-            with transaction.atomic():
-                # Delete associated file first (outside transaction for performance)
-                if item.image:
-                    try:
-                        item.image.delete(save=False)
-                        logger.info(f"Deleted image file for clothing item {item_id}")
-                    except Exception as e:
-                        logger.warning(f"Could not delete image file for item {item_id}: {e}")
-                
-                # Delete the database record
-                item_name = item.name
-                item.delete()
-                logger.info(f"Deleted clothing item '{item_name}' (ID: {item_id}) for user {request.user.id}")
-                
-                return Response({'message': 'Item deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
-                
+            if item.image:
+                item.image.delete()
+            item.delete()
+            return Response({'message': 'Item deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            logger.error(f"Error deleting clothing item {item_id} for user {request.user.id}: {str(e)}")
+            print(f"❌ Error deleting clothing item {item_id}: {str(e)}")
             return Response({'error': 'Delete failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -312,11 +336,11 @@ def clothing_item_detail(request, item_id):
 def outfits(request):
     if request.method == 'GET':
         try:
-            user_outfits = Outfit.objects.filter(user=request.user).select_related('user').prefetch_related('clothing_items')
+            user_outfits = Outfit.objects.filter(user=request.user)
             serializer = OutfitSerializer(user_outfits, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
-            logger.error(f"Error fetching outfits for user {request.user.id}: {str(e)}")
+            print(f"❌ Error fetching outfits: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     elif request.method == 'POST':
@@ -324,11 +348,14 @@ def outfits(request):
             serializer = OutfitSerializer(data=request.data, context={'request': request})
             if serializer.is_valid():
                 outfit = serializer.save()
-                logger.info(f"Created outfit: {outfit.name} for user {request.user.id}")
+                print(f"✅ Created outfit: {outfit.name}")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+            print(f"❌ Outfit serializer errors: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            logger.error(f"Error creating outfit for user {request.user.id}: {str(e)}")
+            print(f"❌ Error creating outfit: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -337,50 +364,30 @@ def outfits(request):
 @parser_classes([MultiPartParser, FormParser])
 def outfit_detail(request, outfit_id):
     try:
-        outfit = Outfit.objects.select_related('user').prefetch_related('clothing_items').get(id=outfit_id, user=request.user)
+        outfit = Outfit.objects.get(id=outfit_id, user=request.user)
     except Outfit.DoesNotExist:
         return Response({'error': 'Outfit not found'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        logger.error(f"Error fetching outfit {outfit_id} for user {request.user.id}: {str(e)}")
-        return Response({'error': 'Database error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     if request.method == 'GET':
         serializer = OutfitSerializer(outfit)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     elif request.method in ['PUT', 'PATCH']:
-        try:
-            partial = request.method == 'PATCH'
-            serializer = OutfitSerializer(outfit, data=request.data, partial=partial)
-            if serializer.is_valid():
-                serializer.save()
-                logger.info(f"Updated outfit {outfit_id} for user {request.user.id}")
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            logger.error(f"Error updating outfit {outfit_id} for user {request.user.id}: {str(e)}")
-            return Response({'error': 'Update failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        partial = request.method == 'PATCH'
+        serializer = OutfitSerializer(outfit, data=request.data, partial=partial)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
         try:
-            with transaction.atomic():
-                # Delete associated file first (outside transaction for performance)
-                if outfit.image:
-                    try:
-                        outfit.image.delete(save=False)
-                        logger.info(f"Deleted image file for outfit {outfit_id}")
-                    except Exception as e:
-                        logger.warning(f"Could not delete image file for outfit {outfit_id}: {e}")
-                
-                # Delete the database record
-                outfit_name = outfit.name
-                outfit.delete()
-                logger.info(f"Deleted outfit '{outfit_name}' (ID: {outfit_id}) for user {request.user.id}")
-                
-                return Response({'message': 'Outfit deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
-                
+            if outfit.image:
+                outfit.image.delete()
+            outfit.delete()
+            return Response({'message': 'Outfit deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            logger.error(f"Error deleting outfit {outfit_id} for user {request.user.id}: {str(e)}")
+            print(f"❌ Error deleting outfit {outfit_id}: {str(e)}")
             return Response({'error': 'Delete failed'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -390,13 +397,11 @@ def like_outfit(request, outfit_id):
     try:
         outfit = Outfit.objects.get(id=outfit_id, user=request.user)
         outfit.liked = not outfit.liked
-        outfit.save(update_fields=['liked'])  # Only update the liked field for better performance
+        outfit.save()
         
         serializer = OutfitSerializer(outfit)
-        logger.info(f"Toggled like for outfit {outfit_id} to {outfit.liked} for user {request.user.id}")
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Outfit.DoesNotExist:
         return Response({'error': 'Outfit not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        logger.error(f"Error toggling like for outfit {outfit_id} for user {request.user.id}: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
