@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import AddItemModal from './components/AddItemModal'
 import ItemDetailsModal from './components/ItemDetailsModal'
 import CameraModal from '../components/shared/CameraModal'
-import Sidebar from '../components/shared/Sidebar'
+import  Sidebar  from '../components/shared/Sidebar';
 
 interface ClothingItem {
   id: string
@@ -29,6 +29,8 @@ interface User {
 }
 
 export default function ClosetPage() {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
   const [user, setUser] = useState<User | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [activeTab, setActiveTab] = useState('My Items')
@@ -39,7 +41,7 @@ export default function ClosetPage() {
   const [addedItems, setAddedItems] = useState<Set<string>>(new Set())
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<ClothingItem | null>(null)
-const [showAddItemModal, setShowAddItemModal] = useState(false)
+  const [showAddItemModal, setShowAddItemModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [itemData, setItemData] = useState({
@@ -60,7 +62,6 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
   const [showItemDetailsModal, setShowItemDetailsModal] = useState(false)
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<ClothingItem | null>(null)
   
-
   const [showUrlModal, setShowUrlModal] = useState(false)
   const [selectedCatalogItem, setSelectedCatalogItem] = useState<any>(null)
   const [urlReference, setUrlReference] = useState('')
@@ -70,7 +71,6 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
     color: '',
     tags: ''
   })
-  
   
   const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({})
 
@@ -86,17 +86,18 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
     setImageLoadingStates(prev => ({ ...prev, [itemId]: true }))
   }
 
-  
   const isUrlImage = (imageUrl: string) => {
     if (!imageUrl) return false
     
-    const isMediaStorageImage = 
-      imageUrl.includes('.amazonaws.com') || 
-      imageUrl.includes('cloudfront.net') ||     
-      imageUrl.startsWith('/media/') ||          
-      imageUrl.includes('storage.googleapis') || 
-      imageUrl.includes('localhost:8000') ||     
-      !imageUrl.startsWith('http')               
+    // ⭐ FIX: This logic now dynamically uses your API_BASE_URL.
+    // It no longer contains a hardcoded 'localhost:8000'.
+    const isMediaStorageImage =
+      imageUrl.includes('.amazonaws.com') ||
+      imageUrl.includes('cloudfront.net') ||
+      imageUrl.startsWith('/media/') ||
+      imageUrl.includes('storage.googleapis') ||
+      (API_BASE_URL && imageUrl.startsWith(API_BASE_URL)) || 
+      !imageUrl.startsWith('http');
     
     return imageUrl.startsWith('http') && !isMediaStorageImage
   }
@@ -132,7 +133,8 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
     if (cached) {
       try {
         setUser(JSON.parse(cached))
-      } catch (e) {
+      }
+      catch (e) {
         console.error('Error parsing cached user data:', e)
       }
     }
@@ -161,7 +163,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
 
       try {
         setIsLoadingItems(true)
-        const response = await fetch('http://localhost:8000/api/auth/clothing-items/', {
+        const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, {
           method: 'GET',
           headers: {
             'Authorization': `Token ${token}`,
@@ -186,12 +188,15 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
             createdAt: item.created_at
           }))
           setClothingItems(transformedItems)
-        } else {
+        }
+        else {
           console.error('Failed to fetch clothing items')
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.error('Error fetching clothing items:', error)
-      } finally {
+      }
+      finally {
         setIsLoadingItems(false)
       }
     }
@@ -199,7 +204,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
     if (isClient) {
       fetchClothingItems()
     }
-  }, [isClient])
+  }, [isClient, API_BASE_URL])
 
   const tabs = ['My Items', 'Browse Catalog']
   const filters = ['All', 'Tops', 'Bottoms', 'Dresses', 'Outerwear', 'Shoes', 'Accessories', 'Never Worn', 'Favorites', 'Recently Added']
@@ -431,7 +436,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
     setAddedItems(prev => new Set([...prev, catalogItem.id]))
 
     try {
-      const response = await fetch('http://localhost:8000/api/auth/clothing-items/', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -469,7 +474,8 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
 
         setClothingItems(prev => [...prev, newItem])
         console.log('✅ Item added successfully:', newItem.name)
-      } else {
+      }
+      else {
         console.error('❌ Failed to add item to backend')
         setAddedItems(prev => {
           const newSet = new Set(prev)
@@ -477,7 +483,8 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
           return newSet
         })
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('❌ Error adding catalog item:', error)
       setAddedItems(prev => {
         const newSet = new Set(prev)
@@ -529,7 +536,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
     try {
       const imageToSave = urlReference.trim() || ''
 
-      const response = await fetch('http://localhost:8000/api/auth/clothing-items/', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -582,14 +589,17 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
         setSelectedCatalogItem(null)
         setUrlReference('')
         setCatalogItemData({ brand: '', size: '', color: '', tags: '' })
-      } else {
+      }
+      else {
         console.error('❌ Failed to add item')
         alert('Failed to add item. Please try again.')
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('❌ Error adding item:', error)
       alert('Error adding item. Please check your connection and try again.')
-    } finally {
+    }
+    finally {
       setIsUploading(false)
     }
   }
@@ -615,7 +625,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/clothing-items/${item.id}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${item.id}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Token ${token}`,
@@ -629,17 +639,18 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
       if (!response.ok) {
         setClothingItems(clothingItems)
         if (selectedItemForDetails && selectedItemForDetails.id === item.id) {
-          setSelectedItemForDetails(selectedItemForDetails)
+          setSelectedItemForDetails(item.id === selectedItemForDetails.id ? { ...selectedItemForDetails, isFavorite: !selectedItemForDetails.isFavorite } : selectedItemForDetails);
         }
-        alert('Failed to update favorite status. Please try again.')
+        alert('Failed to update favorite status. Please try again.');
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error toggling favorite:', error)
       setClothingItems(clothingItems)
       if (selectedItemForDetails && selectedItemForDetails.id === item.id) {
-        setSelectedItemForDetails(selectedItemForDetails)
+        setSelectedItemForDetails(item.id === selectedItemForDetails.id ? { ...selectedItemForDetails, isFavorite: !selectedItemForDetails.isFavorite } : selectedItemForDetails);
       }
-      alert('Network error. Please check your connection.')
+      alert('Network error. Please check your connection.');
     }
   }
 
@@ -658,7 +669,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/clothing-items/${itemToDelete.id}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${itemToDelete.id}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Token ${token}`,
@@ -669,10 +680,12 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
       if (response.ok) {
         setClothingItems(prev => prev.filter(item => item.id !== itemToDelete.id))
         console.log('✅ Item deleted successfully:', itemToDelete.name)
-      } else {
+      }
+      else {
         console.error('❌ Failed to delete item from backend')
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('❌ Error deleting item:', error)
     }
 
@@ -760,7 +773,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
       formData.append('is_worn', 'false')
       formData.append('image', blob, 'clothing-item.jpg')
 
-      const response = await fetch('http://localhost:8000/api/auth/clothing-items/', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -790,14 +803,17 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
         console.log('✅ Item added successfully!')
         
         resetForm()
-      } else {
+      }
+      else {
         console.error('❌ Failed to add item')
         alert('Failed to add item. Please try again.')
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('❌ Error adding item:', error)
       alert('Error adding item. Please check your connection and try again.')
-    } finally {
+    }
+    finally {
       setIsUploading(false)
     }
   }
@@ -857,7 +873,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
     setSelectedItemForDetails(updatedItems.find(item => item.id === itemToUpdate.id) || null);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/clothing-items/${itemToUpdate.id}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${itemToUpdate.id}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Token ${token}`,
@@ -874,7 +890,8 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
         setSelectedItemForDetails(itemToUpdate);
         alert('Failed to save wear status. Please try again.');
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error toggling wear status:', error);
       setClothingItems(clothingItems);
       setSelectedItemForDetails(itemToUpdate);
@@ -895,7 +912,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
     setClothingItems(updatedItems);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/clothing-items/${updatedItem.id}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${updatedItem.id}/`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Token ${token}`,
@@ -916,7 +933,8 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
         console.error('Failed to update item on backend');
         setClothingItems(clothingItems);
         alert('Failed to update item. Please try again.');
-      } else {
+      }
+      else {
         const responseData = await response.json();
         const newUpdatedItem = {
           ...updatedItem,
@@ -924,7 +942,8 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
         };
         setSelectedItemForDetails(newUpdatedItem);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error updating item:', error);
       setClothingItems(clothingItems);
       alert('Network error. Please check your connection.');
@@ -1474,7 +1493,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
               </button>
               <button 
                 onClick={confirmDeleteItem}
-                className="px-4 py-2 rounded-lg bg-red-500/90 text-white hover:bg-red-600/90 transition-colors"
+                className="px-4 py-2 bg-red-500/90 text-white hover:bg-red-600/90 transition-colors"
                 style={{ fontFamily: 'Inter' }}
               >
                 Delete

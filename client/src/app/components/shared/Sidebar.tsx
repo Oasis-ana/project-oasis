@@ -1,9 +1,9 @@
+'use client' 
 
-'use client'
 import { Home, Camera, Bell, Settings, X, Upload } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useRef } from 'react'
-import CameraModal from './CameraModal'
+import CameraModal from './CameraModal' // Assuming CameraModal is a sibling in `components/shared`
 
 interface SidebarProps {
   user?: { avatar?: string } | null;
@@ -28,16 +28,16 @@ interface ItemData {
 }
 
 const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL; // Added API_BASE_URL constant
+
   const router = useRouter()
   const pathname = usePathname()
   const [showCameraModal, setShowCameraModal] = useState(false)
   const [showChoiceModal, setShowChoiceModal] = useState(false)
   const [selectedChoice, setSelectedChoice] = useState<'outfit' | 'item' | null>(null)
   
-  
   const [showCreateOutfitModal, setShowCreateOutfitModal] = useState(false)
   const [showAddItemModal, setShowAddItemModal] = useState(false)
-  
   
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
@@ -59,10 +59,8 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  
   const baseCategories = ['Casual', 'Work', 'Date Night', 'Formal', 'Party', 'Weekend', 'Travel', 'Sport']
 
-  
   const handleCameraClick = () => {
     setShowChoiceModal(true)
   }
@@ -70,7 +68,6 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
   const handleChoiceSelection = (choice: 'outfit' | 'item') => {
     setSelectedChoice(choice)
     setShowChoiceModal(false)
-    
     
     if (choice === 'outfit') {
       setShowCreateOutfitModal(true)
@@ -153,7 +150,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
         formData.append('image', blob, 'outfit.jpg')
       }
 
-      const response = await fetch('http://localhost:8000/api/auth/outfits/', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/outfits/`, { // MODIFIED
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -164,13 +161,16 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
       if (response.ok) {
         alert('Outfit saved successfully! 🎉')
         resetOutfitForm()
-      } else {
+      }
+      else {
         alert('Failed to save outfit. Please try again.')
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error saving outfit:', error)
       alert('Error saving outfit. Please try again.')
-    } finally {
+    }
+    finally {
       setIsUploading(false)
     }
   }
@@ -204,7 +204,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
       formData.append('is_worn', 'false')
       formData.append('image', blob, 'clothing-item.jpg')
 
-      const response = await fetch('http://localhost:8000/api/auth/clothing-items/', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, { // MODIFIED
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -215,13 +215,16 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
       if (response.ok) {
         alert('Item added successfully! ✅')
         resetItemForm()
-      } else {
+      }
+      else {
         alert('Failed to add item. Please try again.')
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Error adding item:', error)
       alert('Error adding item. Please try again.')
-    } finally {
+    }
+    finally {
       setIsUploading(false)
     }
   }
@@ -378,7 +381,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
         </div>
       )}
 
-      {/*  Outfit Creation Modal */}
+      {/* Outfit Creation Modal */}
       {showCreateOutfitModal && (
         <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-md rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-white/20">
@@ -546,7 +549,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
         </div>
       )}
 
-      {/*  Add Item Modal */}
+      {/* Add Item Modal */}
       {showAddItemModal && (
         <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-md rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-white/20">

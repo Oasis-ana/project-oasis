@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Outfit } from '../types/outfit'
 
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+
 export const useOutfits = () => {
   const [outfits, setOutfits] = useState<Outfit[]>([])
   const [isLoadingOutfits, setIsLoadingOutfits] = useState(true)
@@ -18,7 +21,8 @@ export const useOutfits = () => {
 
     try {
       setIsLoadingOutfits(true)
-      const response = await fetch('http://localhost:8000/api/auth/outfits/', {
+      // Corrected: Uses the API_BASE_URL variable
+      const response = await fetch(`${API_BASE_URL}/api/auth/outfits/`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${token}`,
@@ -29,7 +33,6 @@ export const useOutfits = () => {
       if (response.ok) {
         const outfitData = await response.json()
         console.log('📥 Fetched outfits:', outfitData.length, 'items')
-        
         
         outfitData.forEach((outfit: any, index: number) => {
           console.log(`Outfit ${index} image:`, outfit.image)
@@ -66,7 +69,6 @@ export const useOutfits = () => {
     if (!token) return
 
     try {
-      
       setOutfits(prevOutfits => 
         prevOutfits.map(outfit => 
           outfit.id === outfitId 
@@ -75,7 +77,8 @@ export const useOutfits = () => {
         )
       )
 
-      const response = await fetch(`http://localhost:8000/api/auth/outfits/${outfitId}/like/`, {
+      // Corrected: Uses the API_BASE_URL variable
+      const response = await fetch(`${API_BASE_URL}/api/auth/outfits/${outfitId}/like/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -84,7 +87,6 @@ export const useOutfits = () => {
       })
 
       if (!response.ok) {
-        
         setOutfits(prevOutfits => 
           prevOutfits.map(outfit => 
             outfit.id === outfitId 
@@ -95,7 +97,6 @@ export const useOutfits = () => {
       }
     } catch (error) {
       console.error('Error liking outfit:', error)
-      
       setOutfits(prevOutfits => 
         prevOutfits.map(outfit => 
           outfit.id === outfitId 
@@ -113,7 +114,8 @@ export const useOutfits = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/api/auth/outfits/', {
+      // Corrected: Uses the API_BASE_URL variable
+      const response = await fetch(`${API_BASE_URL}/api/auth/outfits/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
@@ -142,7 +144,8 @@ export const useOutfits = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/outfits/${outfitId}/`, {
+      // Corrected: Uses the API_BASE_URL variable
+      const response = await fetch(`${API_BASE_URL}/api/auth/outfits/${outfitId}/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Token ${token}`,
@@ -173,7 +176,8 @@ export const useOutfits = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/outfits/${outfitId}/`, {
+      // Corrected: Uses the API_BASE_URL variable
+      const response = await fetch(`${API_BASE_URL}/api/auth/outfits/${outfitId}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Token ${token}`,
