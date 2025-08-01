@@ -15,7 +15,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '.railway.app',  
     '.up.railway.app',
-    'project-oasis-production.up.railway.app',  # Add your specific Railway domain
+    'project-oasis-production.up.railway.app',
 ]
 
 INSTALLED_APPS = [
@@ -33,11 +33,10 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
 ]
 
-# ⭐ FIX: Reordered the MIDDLEWARE list to the correct, stable order.
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # Move CORS middleware higher
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -83,17 +82,15 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CORS Configuration - Fixed
+# CORS Configuration
 CORS_ALLOWED_ORIGINS = [
     "https://project-oasis-omega.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-# Fix: Change to CORS_ALLOW_CREDENTIALS (not CORS_ALLOWED_CREDENTIALS)
 CORS_ALLOW_CREDENTIALS = True
 
-# Add all necessary CORS headers
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -106,7 +103,6 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Add allowed methods
 CORS_ALLOWED_METHODS = [
     'DELETE',
     'GET',
@@ -116,15 +112,14 @@ CORS_ALLOWED_METHODS = [
     'PUT',
 ]
 
-# Add CSRF trusted origins for your frontend
 CSRF_TRUSTED_ORIGINS = [
     "https://project-oasis-omega.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-# For development - you can temporarily enable this to test
-# CORS_ALLOW_ALL_ORIGINS = True  # Remove this in production
+# Temporary - for testing only (REMOVE after testing)
+CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {
