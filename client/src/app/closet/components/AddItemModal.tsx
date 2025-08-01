@@ -2,8 +2,6 @@ import { X, Camera, Upload } from 'lucide-react'
 import { useRef } from 'react'
 
 interface AddItemModalProps {
- 
-
   selectedImage: string | null;
   setSelectedImage: (image: string | null) => void;
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -19,7 +17,7 @@ interface AddItemModalProps {
   handleSaveItem: () => void;
   isUploading: boolean;
   onClose: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   onCameraClick: () => void; 
 }
 
@@ -37,11 +35,9 @@ export default function AddItemModal({
 }: AddItemModalProps) {
   
   const startCamera = () => {
-   
     if (onCameraClick) {
       onCameraClick();
     } else {
-      
       alert("Camera functionality is not available. Please upload a photo.");
     }
   }
