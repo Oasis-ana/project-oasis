@@ -32,11 +32,12 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
 ]
 
+# ⭐ FIX: Reordered the MIDDLEWARE list to the correct, stable order.
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -81,7 +82,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-# ⭐ FIX: Added your Vercel frontend URL to allow requests.
 CORS_ALLOWED_ORIGINS = [
     "https://project-oasis-omega.vercel.app",
     "http://localhost:3000",
