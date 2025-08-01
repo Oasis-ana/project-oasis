@@ -332,12 +332,12 @@ def clothing_item_detail(request, item_id):
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
-@parser_classes([MultiPartParser, FormParser])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def outfits(request):
     if request.method == 'GET':
         try:
-            user_outfits = Outfit.objects.filter(user=request.user)
-            serializer = OutfitSerializer(user_outfits, many=True)
+            user_outfits = Outfit.objects.filter(user=request.user).order_by('-created_at')
+            serializer = OutfitSerializer(user_outfits, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             print(f"❌ Error fetching outfits: {str(e)}")
@@ -345,13 +345,25 @@ def outfits(request):
     
     elif request.method == 'POST':
         try:
+            print(f"🔍 Received outfit creation request from user: {request.user.username}")
+            print(f"📄 Request data keys: {list(request.data.keys())}")
+            print(f"📄 Request FILES keys: {list(request.FILES.keys())}")
+            
+            # Create serializer with request context
             serializer = OutfitSerializer(data=request.data, context={'request': request})
+            
             if serializer.is_valid():
+                print("✅ Serializer is valid, saving outfit...")
                 outfit = serializer.save()
-                print(f"✅ Created outfit: {outfit.name}")
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            print(f"❌ Outfit serializer errors: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                print(f"✅ Created outfit: {outfit.title} (ID: {outfit.id})")
+                
+                # Return the serialized data of the created outfit
+                response_serializer = OutfitSerializer(outfit, context={'request': request})
+                return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                print(f"❌ Outfit serializer errors: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
         except Exception as e:
             print(f"❌ Error creating outfit: {str(e)}")
             import traceback
@@ -361,7 +373,7 @@ def outfits(request):
 
 @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
-@parser_classes([MultiPartParser, FormParser])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def outfit_detail(request, outfit_id):
     try:
         outfit = Outfit.objects.get(id=outfit_id, user=request.user)
@@ -369,15 +381,16 @@ def outfit_detail(request, outfit_id):
         return Response({'error': 'Outfit not found'}, status=status.HTTP_404_NOT_FOUND)
     
     if request.method == 'GET':
-        serializer = OutfitSerializer(outfit)
+        serializer = OutfitSerializer(outfit, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     elif request.method in ['PUT', 'PATCH']:
         partial = request.method == 'PATCH'
-        serializer = OutfitSerializer(outfit, data=request.data, partial=partial)
+        serializer = OutfitSerializer(outfit, data=request.data, partial=partial, context={'request': request})
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            updated_outfit = serializer.save()
+            response_serializer = OutfitSerializer(updated_outfit, context={'request': request})
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
@@ -399,7 +412,7 @@ def like_outfit(request, outfit_id):
         outfit.liked = not outfit.liked
         outfit.save()
         
-        serializer = OutfitSerializer(outfit)
+        serializer = OutfitSerializer(outfit, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Outfit.DoesNotExist:
         return Response({'error': 'Outfit not found'}, status=status.HTTP_404_NOT_FOUND)
