@@ -3,7 +3,7 @@ import axios, { InternalAxiosRequestConfig } from 'axios';
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
 
 const API = axios.create({
-  baseURL: `${API_URL}/api`, 
+  baseURL: `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,17 +13,19 @@ const API = axios.create({
 // Request interceptor for adding auth token
 API.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const publicEndpoints = ['/auth/register/', '/auth/login/'];
-  const isPublicEndpoint = publicEndpoints.some(endpoint => 
-    config.url?.includes(endpoint)
-  );
-  
+
+  // More precise check for public endpoints:
+  // Remove baseURL from URL to get relative path for matching
+  const urlPath = config.url?.replace(config.baseURL || '', '');
+  const isPublicEndpoint = publicEndpoints.some(endpoint => urlPath === endpoint);
+
   if (!isPublicEndpoint && typeof window !== 'undefined') {
     const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Token ${token}`;
     }
   }
-  
+
   return config;
 });
 
@@ -35,7 +37,7 @@ API.interceptors.response.use(
       console.error('Request timeout - operation took too long');
       error.message = 'Request timed out. Please try again.';
     }
-    
+
     if (error.response?.status === 401) {
       // Token expired or invalid, redirect to login
       console.error('Authentication failed');
@@ -44,12 +46,12 @@ API.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    
+
     if (error.response?.status === 500) {
       console.error('Server error occurred');
       error.message = 'Server error. Please try again later.';
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -61,8 +63,10 @@ export const setAuthToken = (token: string | null) => {
   if (typeof window !== 'undefined') {
     if (token) {
       localStorage.setItem('authToken', token);
+      API.defaults.headers.common['Authorization'] = `Token ${token}`;
     } else {
       localStorage.removeItem('authToken');
+      delete API.defaults.headers.common['Authorization'];
     }
   }
 };
@@ -80,12 +84,12 @@ export const deleteItem = async (itemId: string, endpoint: string = 'items', ret
       return response.data;
     } catch (error: any) {
       console.error(`Delete attempt ${i + 1} failed:`, error.message);
-      
+
       if (i === retries) {
         // Final attempt failed, throw the error
         throw new Error(error.response?.data?.message || error.message || 'Delete failed');
       }
-      
+
       // Wait before retry with exponential backoff
       const delay = 1000 * Math.pow(2, i); // 1s, 2s, 4s...
       console.log(`Retrying delete in ${delay}ms...`);
