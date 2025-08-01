@@ -55,7 +55,7 @@ const [showAddItemModal, setShowAddItemModal] = useState(false)
   const [showCameraModal, setShowCameraModal] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null!)
 
   const [showItemDetailsModal, setShowItemDetailsModal] = useState(false)
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<ClothingItem | null>(null)
