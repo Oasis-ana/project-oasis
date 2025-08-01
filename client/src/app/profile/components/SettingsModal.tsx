@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { X, User, Lock, Upload, LogOut, Camera } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { Camera, X, LogOut } from 'lucide-react'
 
 interface User {
   username: string
@@ -42,9 +41,7 @@ export default function SettingsModal({
   const [errors, setErrors] = useState<{[key: string]: string}>({})
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter()
 
-  
   useEffect(() => {
     if (isOpen && currentUser) {
       setSettingsForm(prev => ({
@@ -60,13 +57,11 @@ export default function SettingsModal({
   const handleImageUpload = async (file: File) => {
     if (!file) return
 
-    
     if (!file.type.startsWith('image/')) {
       setErrors({ avatar: 'Please select an image file' })
       return
     }
 
-    
     if (file.size > 5 * 1024 * 1024) {
       setErrors({ avatar: 'Image size must be less than 5MB' })
       return
@@ -91,7 +86,6 @@ export default function SettingsModal({
       const data = await response.json()
 
       if (response.ok) {
-       
         onUserUpdate({
           ...currentUser,
           avatar: data.avatar
@@ -111,14 +105,12 @@ export default function SettingsModal({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-     
       const reader = new FileReader()
       reader.onload = (e) => {
         setPreviewImage(e.target?.result as string)
       }
       reader.readAsDataURL(file)
 
-     
       handleImageUpload(file)
     }
   }
@@ -144,7 +136,9 @@ export default function SettingsModal({
     } finally {
       localStorage.removeItem('authToken')
       localStorage.removeItem('username')
-      router.push('/login')
+      localStorage.removeItem('userProfile')
+      localStorage.removeItem('savedOutfits')
+      window.location.href = '/login'
     }
   }
 
@@ -157,7 +151,6 @@ export default function SettingsModal({
       newErrors.username = 'Username must be at least 3 characters'
     }
 
-    
     if (settingsForm.newPassword || settingsForm.currentPassword) {
       if (!settingsForm.currentPassword) {
         newErrors.currentPassword = 'Current password is required'
@@ -192,9 +185,7 @@ export default function SettingsModal({
         throw new Error('No authentication token found')
       }
 
-      
       const updateData: any = {}
-      
       
       if (settingsForm.username.trim() !== currentUser?.username) {
         updateData.username = settingsForm.username.trim()
@@ -204,7 +195,6 @@ export default function SettingsModal({
         updateData.bio = settingsForm.bio.trim()
       }
 
-      
       if (settingsForm.currentPassword && settingsForm.newPassword) {
         updateData.current_password = settingsForm.currentPassword
         updateData.new_password = settingsForm.newPassword
@@ -278,8 +268,6 @@ export default function SettingsModal({
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
       <div className="bg-white rounded-lg p-6 w-80 shadow-2xl pointer-events-auto border border-gray-100">
-        
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 
             className="text-xl font-bold text-[#0B2C21]" 
@@ -293,7 +281,6 @@ export default function SettingsModal({
           />
         </div>
 
-        {/* Error */}
         {errors.general && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
             {errors.general}
@@ -301,8 +288,6 @@ export default function SettingsModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          
-          {/* Profile Picture with Upload */}
           <div className="text-center mb-4">
             <div className="relative w-16 h-16 mx-auto mb-2">
               {previewImage ? (
@@ -312,12 +297,11 @@ export default function SettingsModal({
                   className="w-16 h-16 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-green-950 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-green-950"></div>
+                <div className="w-16 h-16 rounded-full bg-orange-400 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-orange-600"></div>
                 </div>
               )}
               
-              {/* Upload  */}
               <button
                 type="button"
                 onClick={triggerFileSelect}
@@ -346,7 +330,6 @@ export default function SettingsModal({
               <p className="text-xs text-red-600 mt-1">{errors.avatar}</p>
             )}
 
-            
             <input
               ref={fileInputRef}
               type="file"
@@ -356,7 +339,6 @@ export default function SettingsModal({
             />
           </div>
 
-          {/* Username */}
           <div>
             <input
               type="text"
@@ -373,7 +355,6 @@ export default function SettingsModal({
             )}
           </div>
 
-          {/* Bio */}
           <div>
             <textarea
               value={settingsForm.bio}
@@ -385,7 +366,6 @@ export default function SettingsModal({
             />
           </div>
 
-          {/* Passwords */}
           <div className="space-y-3 pt-2">
             <input
               type="password"
@@ -430,7 +410,6 @@ export default function SettingsModal({
             )}
           </div>
 
-          {/* Buttons */}
           <div className="pt-4 space-y-2">
             <button
               type="submit"

@@ -6,7 +6,7 @@ import { Search, Plus, X, Heart, Trash2, Edit, Camera, Upload, Home, Bell, Setti
 import { useRouter } from 'next/navigation'
 import { useOutfits } from '../hooks/useOutfits'
 import { useCamera } from '../hooks/useCamera'
-import SettingsModal from '../profile/SettingsModal'
+import SettingsModal from '../profile/components/SettingsModal'
 import OutfitGrid from '../home/components/OutfitGrid'
 import Sidebar from '../components/shared/Sidebar'
 import { Outfit } from '../types/outfit'
