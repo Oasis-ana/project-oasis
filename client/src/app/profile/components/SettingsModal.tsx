@@ -58,7 +58,17 @@ export default function SettingsModal({
   }, [isOpen, currentUser])
 
   const handleImageUpload = async (file: File) => {
-    if (!file) return
+    if (!file) {
+      console.log('🚫 No file provided')
+      return
+    }
+
+    console.log('📤 Starting upload:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified
+    })
 
     if (!file.type.startsWith('image/')) {
       setErrors({ avatar: 'Please select an image file' })
@@ -75,31 +85,42 @@ export default function SettingsModal({
 
     try {
       const formData = new FormData()
-      formData.append('avatar', file)
+      formData.append('avatar', file, file.name)
+      
+      console.log('📤 FormData created with file:', file.name)
+      console.log('📤 FormData entries:', [...formData.entries()])
 
       const token = localStorage.getItem('authToken')
-      // FIXED: Use environment variable instead of hardcoded localhost
+      console.log('📤 Using token:', token ? `${token.substring(0, 10)}...` : 'No token')
+      
       const response = await fetch(`${API_URL}/api/auth/upload-avatar/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
+          // Don't set Content-Type - let browser handle it for FormData
         },
         body: formData
       })
 
+      console.log('📤 Response status:', response.status)
+      console.log('📤 Response headers:', Object.fromEntries(response.headers.entries()))
+      
       const data = await response.json()
+      console.log('📤 Response data:', data)
 
       if (response.ok) {
+        console.log('✅ Upload successful!')
         onUserUpdate({
           ...currentUser,
           avatar: data.avatar
         })
         setPreviewImage(data.avatar)
       } else {
+        console.log('❌ Upload failed:', data)
         setErrors({ avatar: data.error || 'Failed to upload image' })
       }
     } catch (error) {
-      console.error('Image upload error:', error)
+      console.error('📤 Image upload error:', error)
       setErrors({ avatar: 'Failed to upload image. Please try again.' })
     } finally {
       setIsUploadingImage(false)
