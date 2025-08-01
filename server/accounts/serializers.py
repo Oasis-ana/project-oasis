@@ -56,6 +56,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        # Safely handle avatar URL
         try:
             if instance.avatar:
                 data['avatar'] = instance.avatar.url
@@ -83,6 +84,7 @@ class ClothingItemSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        
         try:
             if instance.image:
                 data['image'] = instance.image.url
@@ -93,29 +95,25 @@ class ClothingItemSerializer(serializers.ModelSerializer):
         except Exception as e:
             print(f"❌ Error getting clothing item image URL: {e}")
             data['image'] = None
+
         return data
 
 
 class OutfitSerializer(serializers.ModelSerializer):
-    items = serializers.PrimaryKeyRelatedField(many=True, queryset=ClothingItem.objects.all(), required=False)
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
-
     class Meta:
         model = Outfit
         fields = [
             'id', 'title', 'description', 'category', 'occasion',
-            'image', 'tags', 'liked', 'created_at', 'updated_at',
-            'items', 'user'
+            'image', 'tags', 'liked', 'created_at', 'updated_at'
         ]
         read_only_fields = ('id', 'created_at', 'updated_at')
 
     def create(self, validated_data):
         print(f"🔍 OutfitSerializer.create called with data: {validated_data}")
-        items = validated_data.pop('items', [])
         validated_data['user'] = self.context['request'].user
+        
         try:
-            outfit = Outfit.objects.create(**validated_data)
-            outfit.items.set(items)
+            outfit = super().create(validated_data)
             print(f"✅ Outfit created successfully: {outfit.title}")
             return outfit
         except Exception as e:
@@ -126,15 +124,10 @@ class OutfitSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         print(f"🔍 OutfitSerializer.update called for outfit: {instance.title}")
-        items = validated_data.pop('items', None)
         try:
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
-            if items is not None:
-                instance.items.set(items)
-            instance.save()
-            print(f"✅ Outfit updated successfully: {instance.title}")
-            return instance
+            updated_outfit = super().update(instance, validated_data)
+            print(f"✅ Outfit updated successfully: {updated_outfit.title}")
+            return updated_outfit
         except Exception as e:
             print(f"❌ Error in OutfitSerializer.update: {str(e)}")
             import traceback
@@ -145,7 +138,7 @@ class OutfitSerializer(serializers.ModelSerializer):
         """Customize the output representation"""
         try:
             data = super().to_representation(instance)
-
+            
             # Safely handle image URL
             try:
                 if instance.image:
@@ -155,19 +148,21 @@ class OutfitSerializer(serializers.ModelSerializer):
             except Exception as e:
                 print(f"❌ Error getting outfit image URL for {instance.title}: {e}")
                 data['image'] = None
-
+            
             # Ensure tags is always a list
             if data.get('tags') is None:
                 data['tags'] = []
             elif isinstance(data['tags'], str):
+                # If tags is stored as a string, convert to list
                 data['tags'] = [tag.strip() for tag in data['tags'].split(',') if tag.strip()]
-
+            
             return data
-
+            
         except Exception as e:
             print(f"❌ Error in OutfitSerializer.to_representation: {str(e)}")
             import traceback
             traceback.print_exc()
+            # Return minimal data to prevent complete failure
             return {
                 'id': instance.id if hasattr(instance, 'id') else None,
                 'title': instance.title if hasattr(instance, 'title') else 'Unknown',
@@ -179,6 +174,4 @@ class OutfitSerializer(serializers.ModelSerializer):
                 'liked': instance.liked if hasattr(instance, 'liked') else False,
                 'created_at': instance.created_at if hasattr(instance, 'created_at') else None,
                 'updated_at': instance.updated_at if hasattr(instance, 'updated_at') else None,
-                'items': [],
-                'user': instance.user.id if hasattr(instance, 'user') and instance.user else None,
             }
