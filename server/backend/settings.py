@@ -81,7 +81,9 @@ REST_FRAMEWORK = {
     ],
 }
 
+# ⭐ FIX: Added your Vercel frontend URL to allow requests.
 CORS_ALLOWED_ORIGINS = [
+    "https://project-oasis-omega.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
