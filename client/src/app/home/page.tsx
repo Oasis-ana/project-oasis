@@ -353,7 +353,8 @@ export default function HomePage() {
     setIsUploading(true)
     
     const formData = new FormData()
-    formData.append('title', outfitData.title)
+    // EDITED: Changed 'title' to 'name' to match the backend API expectation.
+    formData.append('name', outfitData.title)
     
     if (outfitData.description) {
       formData.append('description', outfitData.description)
