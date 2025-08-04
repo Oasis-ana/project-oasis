@@ -34,11 +34,25 @@ export default function AddItemModal({
   onCameraClick, 
 }: AddItemModalProps) {
   
+  const localFileInputRef = useRef<HTMLInputElement>(null)
+  
   const startCamera = () => {
     if (onCameraClick) {
       onCameraClick();
     } else {
       alert("Camera functionality is not available. Please upload a photo.");
+    }
+  }
+
+  const triggerFileUpload = () => {
+    const inputRef = fileInputRef?.current || localFileInputRef.current
+    console.log('Triggering file upload, ref:', inputRef)
+    
+    if (inputRef) {
+      inputRef.click()
+    } else {
+      console.error('No file input ref available')
+      alert('File upload not available. Please try refreshing the page.')
     }
   }
 
@@ -75,7 +89,7 @@ export default function AddItemModal({
                 </button>
                 
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={triggerFileUpload}
                   className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#0B2C21] hover:bg-gray-50 transition-colors"
                 >
                   <Upload className="w-12 h-12 text-gray-400 mb-3" />
@@ -86,7 +100,7 @@ export default function AddItemModal({
               </div>
               
               <input
-                ref={fileInputRef}
+                ref={fileInputRef?.current ? fileInputRef : localFileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleFileUpload}
@@ -119,7 +133,7 @@ export default function AddItemModal({
                     Take New Photo
                   </button>
                   <button
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={triggerFileUpload}
                     className="px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     style={{ fontFamily: 'Playfair Display, serif' }}
                   >
