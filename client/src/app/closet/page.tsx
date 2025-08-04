@@ -59,9 +59,7 @@ export default function ClosetPage() {
 
   const [showCamera, setShowCamera] = useState(false)
   const [showCameraModal, setShowCameraModal] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null!)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [showItemDetailsModal, setShowItemDetailsModal] = useState(false)
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<ClothingItem | null>(null)
@@ -748,11 +746,23 @@ export default function ClosetPage() {
         return
       }
       
+      console.log('File selected:', file.name, 'Size:', file.size)
+      
       const reader = new FileReader()
       reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string)
+        const result = e.target?.result as string
+        setSelectedImage(result)
+        console.log('Image loaded successfully')
+      }
+      reader.onerror = () => {
+        console.error('Error reading file')
+        alert('Error reading file. Please try again.')
       }
       reader.readAsDataURL(file)
+    }
+    
+    if (event.target) {
+      event.target.value = ''
     }
   }
 
