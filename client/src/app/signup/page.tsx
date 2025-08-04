@@ -23,9 +23,7 @@ export default function SignupPage() {
     const { name, value } = e.target
     setFormData({
       ...formData,
-      [name]: value,
-      // Auto-generate username from first_name if username is empty
-      ...(name === 'first_name' && !formData.username && { username: value.toLowerCase().replace(/\s+/g, '') })
+      [name]: value
     })
     
     // Clear errors when user types
