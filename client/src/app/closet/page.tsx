@@ -1263,6 +1263,7 @@ export default function ClosetPage() {
         />
       )}
 
+      {/* This input element is now correctly referenced by the modal */}
       <input
         ref={fileInputRef}
         type="file"
