@@ -34,7 +34,7 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState('All Outfits')
   const [isClient, setIsClient] = useState(false)
   
-  
+  // Outfit creation states
   const [showCreateOutfitModal, setShowCreateOutfitModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [outfitData, setOutfitData] = useState({
@@ -48,34 +48,34 @@ export default function HomePage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   
-  
+  // Connection warmup state (REMOVED DUPLICATE)
   const [isConnectionWarmed, setIsConnectionWarmed] = useState(false)
   
-  
+  // Outfit viewing states
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null)
   const [showOutfitModal, setShowOutfitModal] = useState(false)
   
-  
+  // Editing states
   const [isEditing, setIsEditing] = useState(false)
   const [editingOutfitId, setEditingOutfitId] = useState<string | null>(null)
   
- 
+  // Deletion states
   const [showDeleteOutfitModal, setShowDeleteOutfitModal] = useState(false)
   const [outfitToDelete, setOutfitToDelete] = useState<Outfit | null>(null)
   
-  
+  // Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const { outfits, isLoadingOutfits, fetchOutfits, handleLike, addOutfit, updateOutfit, deleteOutfit } = useOutfits()
   const { showCamera, videoRef, canvasRef, startCamera, stopCamera, takePhoto } = useCamera()
 
-  
+  // Base categories
   const baseCategories = ['Casual', 'Work', 'Date Night', 'Formal', 'Party', 'Weekend', 'Travel', 'Sport']
   
-  
+  // All categories combining base, default, and custom tabs
   const allCategories = Array.from(new Set([...baseCategories, ...defaultTabs, ...customTabs]));
 
-  
+  // Warm up the connection on first load
   useEffect(() => {
     if (isClient && !isConnectionWarmed) {
       warmUpConnection()
@@ -84,7 +84,7 @@ export default function HomePage() {
 
   const warmUpConnection = async () => {
     try {
-     
+      // Make a quick API call to warm up the connection
       const token = localStorage.getItem('authToken')
       if (!token) return
 
@@ -102,7 +102,7 @@ export default function HomePage() {
       console.log('Connection warmed up successfully')
     } catch (error) {
       console.log('Connection warmup failed, but continuing:', error)
-      setIsConnectionWarmed(true) 
+      setIsConnectionWarmed(true) // Set to true anyway
     }
   }
 
@@ -196,17 +196,17 @@ export default function HomePage() {
     })
   }
 
-  
+  // Tab configuration
   const tabs = ['All Outfits', 'Favorites', ...defaultTabs, ...customTabs, '+ Add Tab']
   
-  
+  // Filter outfits by active tab
   const tabFilteredOutfits = activeTab === 'All Outfits' 
     ? outfits 
     : activeTab === 'Favorites'
     ? outfits.filter(outfit => outfit.liked)
     : outfits.filter(outfit => outfit.category === activeTab);
 
- 
+  // Filter by search query
   const filteredOutfits = tabFilteredOutfits.filter(outfit => {
     if (searchQuery === '') {
       return true; 
@@ -390,7 +390,7 @@ export default function HomePage() {
     }
   }
 
-  
+  // Improved verification function to check if upload actually succeeded
   const verifyUploadSuccess = async () => {
     try {
       console.log('Verifying upload success...')
@@ -398,16 +398,16 @@ export default function HomePage() {
       const outfitTitle = outfitData.title
       const previousOutfitCount = outfits.length
       
-     
+      // Try to refresh and verify multiple times
       const maxAttempts = 3
       
       for (let i = 0; i < maxAttempts; i++) {
         console.log(`Verification attempt ${i + 1}/${maxAttempts}`)
         
-        
+        // Wait before checking (longer wait on first attempt)
         await new Promise(resolve => setTimeout(resolve, i === 0 ? 3000 : 2000))
         
-        
+        // Force refresh the outfits
         const refreshSuccess = await forceRefreshOutfits()
         
         if (!refreshSuccess) {
@@ -415,17 +415,17 @@ export default function HomePage() {
           continue
         }
         
-        
+        // Check if we can find the uploaded outfit
         const currentOutfits = outfits
         
-        
+        // Method 1: Check outfit count increase (for new uploads)
         if (!isEditing && currentOutfits.length > previousOutfitCount) {
           console.log('SUCCESS: Outfit count increased!')
           handleSuccess('Outfit saved!')
           return
         }
         
-        
+        // Method 2: Look for outfit with exact title match
         const matchingOutfits = currentOutfits.filter(outfit => 
           outfit.title.toLowerCase().trim() === outfitTitle.toLowerCase().trim()
         )
@@ -436,7 +436,7 @@ export default function HomePage() {
           return
         }
         
-        
+        // Method 3: Check if any outfit was created very recently (last 5 minutes)
         const veryRecentOutfits = currentOutfits.filter(outfit => {
           const timeDiff = Date.now() - new Date(outfit.created_at).getTime()
           return timeDiff < 5 * 60 * 1000 // Within last 5 minutes
@@ -449,13 +449,13 @@ export default function HomePage() {
         }
       }
       
-      
+      // If we get here, we couldn't verify but upload might have worked
       console.log('Verification inconclusive - treating as potential success')
       
-      
+      // Close modal and show success (most uploads actually work)
       handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
       
-      
+      // Also suggest a manual refresh
       setTimeout(() => {
         if (confirm('Want to refresh the page to make sure your outfit appears?')) {
           window.location.reload()
@@ -465,10 +465,10 @@ export default function HomePage() {
     } catch (error) {
       console.error('Error during verification:', error)
       
-      
+      // Assume success and close modal
       handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
       
-      
+      // Suggest refresh
       setTimeout(() => {
         alert('Please refresh the page to see your outfit')
       }, 2000)
@@ -478,11 +478,11 @@ export default function HomePage() {
     }
   }
 
-  
+  // Better upload handling with verification
   const handleSaveOrUpdateOutfit = async () => {
     if (!validateForm()) return
 
-    
+    // Prevent multiple uploads
     if (isUploading) {
       console.log('Upload already in progress, ignoring duplicate request')
       return
@@ -519,7 +519,7 @@ export default function HomePage() {
       let success = false
       let result = null
       
-      
+      // Simulate progress for better UX
       setUploadProgress(25)
       
       if (isEditing && editingOutfitId) {
@@ -539,24 +539,24 @@ export default function HomePage() {
         const message = isEditing ? 'Outfit updated!' : 'Outfit saved!';
         handleSuccess(message);
       } else {
-       
+        // Even if the response indicates failure, check if it actually succeeded
         console.log('Upload response indicated failure, verifying...')
         await verifyUploadSuccess()
       }
     } catch (error: any) {
       console.error('Error saving outfit:', error)
       
-     
+      // If it's a timeout error or network error, check if the upload actually succeeded
       if (error?.code === 'ECONNABORTED' || 
           error?.message?.includes('timeout') || 
           error?.message?.includes('Network Error') ||
           error?.name === 'AxiosError') {
         console.log('Upload timed out or had network issues, checking if it actually succeeded...')
         
-       
+        // Wait a moment for the server to process, then verify
         setTimeout(() => {
           verifyUploadSuccess()
-        }, 3000) 
+        }, 3000) // Wait 3 seconds then check
       } else {
         alert('Error saving outfit. Please check your connection and try again.')
         setIsUploading(false)
@@ -1131,30 +1131,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Upload Overlay - prevents user interaction during upload */}
-      {isUploading && (
-        <div className="fixed inset-0 bg-black/10 z-40 flex items-center justify-center">
-          <div className="bg-white/90 backdrop-blur-sm p-6 rounded-lg shadow-lg max-w-sm w-full mx-4">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0B2C21] mx-auto mb-4"></div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-                Uploading Your Outfit
-              </h3>
-              <p className="text-sm text-gray-600 mb-4" style={{ fontFamily: 'Inter' }}>
-                Please don't close this window or navigate away
-              </p>
-              {uploadProgress > 0 && (
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-[#0B2C21] h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {showCamera && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
