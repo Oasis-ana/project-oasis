@@ -138,10 +138,10 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
 
   return (
     <>
-      <div className="flex justify-center pt-8 px-6">
-        <div className="bg-[#0B2C21] p-8 rounded-xl shadow-2xl max-w-6xl w-full border border-white/10">
+      <div className="flex justify-center px-6 pb-4">
+        <div className="bg-[#0B2C21] p-4 rounded-xl shadow-2xl max-w-6xl w-full border border-white/10">
           {/* Calendar Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => navigateMonth('prev')}
               className="p-3 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"
@@ -165,11 +165,11 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
           </div>
 
           {/* Weekday Headers */}
-          <div className="grid grid-cols-7 gap-4 mb-4">
+          <div className="grid grid-cols-7 gap-4 mb-2">
             {weekDays.map(day => (
               <div 
                 key={day} 
-                className="text-center text-white/60 font-medium py-4"
+                className="text-center text-white/60 font-medium py-2"
                 style={{ fontFamily: 'Inter' }}
               >
                 {day}
@@ -252,8 +252,8 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
           </div>
 
           {/* Calendar Footer Stats */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <div className="grid grid-cols-3 gap-8 text-center">
+          <div className="mt-3 pt-2 border-t border-white/10">
+            <div className="grid grid-cols-3 gap-3 text-center">
               <div>
                 <div className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>
                   {outfits.length}
