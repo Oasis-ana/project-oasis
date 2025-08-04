@@ -1422,6 +1422,7 @@ export default function ClosetPage() {
         )}
       </div>
 
+      {/* Add Item Modal */}
       {showAddItemModal && (
         <AddItemModal
           selectedImage={selectedImage}
@@ -1437,6 +1438,16 @@ export default function ClosetPage() {
         />
       )}
 
+      {/* THIS IS THE CRITICAL FIX - HIDDEN FILE INPUT */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileUpload}
+        style={{ display: 'none' }}
+      />
+
+      {/* Item Details Modal */}
       {showItemDetailsModal && selectedItemForDetails && (
         <ItemDetailsModal 
           item={selectedItemForDetails}
@@ -1447,6 +1458,7 @@ export default function ClosetPage() {
         />
       )}
 
+      {/* URL Reference Modal */}
       {showUrlModal && selectedCatalogItem && (
         <div className="fixed inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-sm rounded-lg p-6 w-96 shadow-2xl border border-white/30 max-h-[90vh] overflow-y-auto">
@@ -1557,13 +1569,14 @@ export default function ClosetPage() {
         </div>
       )}
 
+      {/* Camera Modal */}
       <CameraModal
         isOpen={showCameraModal}
         onClose={() => setShowCameraModal(false)}
         onPhotoTaken={handlePhotoTakenFromModal}
       />
 
-      {/* Updated Delete Modal with simplified design matching home page */}
+      {/* Delete Modal */}
       {showDeleteModal && itemToDelete && (
         <div className="fixed inset-0 backdrop-blur-md bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 shadow-2xl">
