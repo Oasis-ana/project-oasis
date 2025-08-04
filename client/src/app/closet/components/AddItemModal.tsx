@@ -50,28 +50,18 @@ export default function AddItemModal({
     
     input.onchange = (event) => {
       const target = event.target as HTMLInputElement
-      const file = target.files?.[0]
+      console.log('File selected via created input:', target.files?.[0])
       
-      if (file) {
-        console.log('File selected:', file.name)
-        
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Image size must be less than 5MB')
-          return
-        }
-        
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = e.target?.result as string
-          setSelectedImage(result)
-          console.log('Image set successfully')
-        }
-        reader.onerror = () => {
-          console.error('Error reading file')
-          alert('Error reading file. Please try again.')
-        }
-        reader.readAsDataURL(file)
-      }
+      // Create a fake React event to pass to the parent's handleFileUpload
+      const fakeEvent = {
+        target: target,
+        currentTarget: target,
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        nativeEvent: event
+      } as React.ChangeEvent<HTMLInputElement>
+      
+      handleFileUpload(fakeEvent)
     }
     
     document.body.appendChild(input)
