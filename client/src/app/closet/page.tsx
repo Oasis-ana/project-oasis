@@ -1238,14 +1238,14 @@ export default function ClosetPage() {
                               e.stopPropagation()
                               handleToggleFavorite(item)
                             }}
-                            className={`absolute top-3 right-12 p-1 rounded-full transition-all ${
+                            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${
                               item.isFavorite 
                                 ? 'bg-yellow-500 text-white shadow-md' 
-                                : 'bg-white/80 text-gray-600 opacity-0 group-hover:opacity-100 hover:bg-yellow-100 hover:text-yellow-600'
+                                : 'bg-white/90 text-gray-600 opacity-0 group-hover:opacity-100 hover:bg-yellow-100 hover:text-yellow-600'
                             }`}
                             title={item.isFavorite ? "Remove from favorites" : "Add to favorites"}
                           >
-                            <Star className={`w-4 h-4 ${item.isFavorite ? 'fill-current' : ''}`} />
+                            <Star className={`w-5 h-5 ${item.isFavorite ? 'fill-current' : ''}`} />
                           </button>
                           
                           <button
@@ -1253,10 +1253,10 @@ export default function ClosetPage() {
                               e.stopPropagation()
                               handleDeleteItem(item)
                             }}
-                            className="absolute top-3 right-3 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                            className="absolute top-1/2 right-4 transform -translate-y-1/2 p-2 bg-red-500/90 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600"
                             title="Delete item"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
 
