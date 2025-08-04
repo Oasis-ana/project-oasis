@@ -12,7 +12,7 @@ export default function SignupPage() {
     username: '',
     email: '',
     first_name: '',
-    last_name: '', 
+    last_name: '',
     password: '',
     password_confirm: ''
   })
@@ -24,8 +24,8 @@ export default function SignupPage() {
     setFormData({
       ...formData,
       [name]: value,
-      // Auto-generate username from first name (required field)
-      ...(name === 'first_name' && { username: value.toLowerCase().replace(/\s+/g, '') })
+      // Auto-generate username from first_name if username is empty
+      ...(name === 'first_name' && !formData.username && { username: value.toLowerCase().replace(/\s+/g, '') })
     })
     
     // Clear errors when user types
@@ -137,59 +137,13 @@ export default function SignupPage() {
                     left: '16px',
                     pointerEvents: 'none'
                   }}>
-                    First Name <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
+                    Username <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
                   </span>
                 )}
                 <input
                   type="text"
                   name="first_name"
                   value={formData.first_name}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    width: '100%',
-                    height: '100%',
-                    padding: '0 16px',
-                    fontSize: '16px',
-                    fontFamily: 'Inter',
-                    color: '#000'
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="relative">
-              <div style={{
-                width: '300px',
-                height: '50px',
-                background: 'rgba(217, 217, 217, 0.40)',
-                display: 'flex',
-                alignItems: 'center',
-                position: 'relative'
-              }}>
-                {!formData.last_name && (
-                  <span style={{
-                    color: '#000',
-                    fontFamily: 'Inter',
-                    fontSize: '16px',
-                    fontStyle: 'normal',
-                    fontWeight: 200,
-                    lineHeight: 'normal',
-                    letterSpacing: '0.32px',
-                    position: 'absolute',
-                    left: '16px',
-                    pointerEvents: 'none'
-                  }}>
-                    Last Name <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
-                  </span>
-                )}
-                <input
-                  type="text"
-                  name="last_name"
-                  value={formData.last_name}
                   onChange={handleChange}
                   required
                   style={{
