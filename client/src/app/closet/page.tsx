@@ -981,7 +981,14 @@ export default function ClosetPage() {
     return (
       <div className="min-h-screen bg-[#F5F3EC] flex">
         <div className="w-20 bg-[#0B2C21]"></div>
-        <div className="flex-1"></div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4">
+              <div className="w-16 h-16 border-4 border-[#F5F3EC] border-t-[#0B2C21] rounded-full animate-spin"></div>
+            </div>
+            <p className="text-gray-600 font-medium" style={{ fontFamily: 'Inter' }}>Loading...</p>
+          </div>
+        </div>
       </div>
     )
   }
@@ -1121,8 +1128,10 @@ export default function ClosetPage() {
             <div className="px-6 pb-6">
               {isLoadingItems ? (
                 <div className="text-center py-8">
-                  <div className="w-8 h-8 border-4 border-[#0B2C21] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading your closet...</p>
+                  <div className="w-12 h-12 mx-auto mb-4">
+                    <div className="w-12 h-12 border-4 border-[#F5F3EC] border-t-[#0B2C21] rounded-full animate-spin"></div>
+                  </div>
+                  <p className="text-gray-600 font-medium" style={{ fontFamily: 'Inter' }}>Loading your closet...</p>
                 </div>
               ) : filteredItems.length === 0 ? (
                 <div className="text-center py-12">
@@ -1150,8 +1159,10 @@ export default function ClosetPage() {
                             {item.image ? (
                               <>
                                 {imageLoadingStates[item.id] && (
-                                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                                    <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+                                    <div className="w-8 h-8">
+                                      <div className="w-8 h-8 border-3 border-gray-200 border-t-[#0B2C21] rounded-full animate-spin"></div>
+                                    </div>
                                   </div>
                                 )}
                                 <img
