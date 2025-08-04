@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Outfit } from '../types/outfit'
 
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
 
 export const useOutfits = () => {
@@ -21,7 +20,6 @@ export const useOutfits = () => {
 
     try {
       setIsLoadingOutfits(true)
-      // Corrected: Uses the API_BASE_URL variable
       const response = await fetch(`${API_BASE_URL}/api/auth/outfits/`, {
         method: 'GET',
         headers: {
@@ -77,7 +75,6 @@ export const useOutfits = () => {
         )
       )
 
-      // Corrected: Uses the API_BASE_URL variable
       const response = await fetch(`${API_BASE_URL}/api/auth/outfits/${outfitId}/like/`, {
         method: 'POST',
         headers: {
@@ -114,7 +111,6 @@ export const useOutfits = () => {
     }
 
     try {
-      // Corrected: Uses the API_BASE_URL variable
       const response = await fetch(`${API_BASE_URL}/api/auth/outfits/`, {
         method: 'POST',
         headers: {
@@ -124,11 +120,15 @@ export const useOutfits = () => {
       })
 
       if (response.ok) {
-        const newOutfit = await response.json() as Outfit
+        const responseData = await response.json()
+        // Handle both old and new response formats
+        const newOutfit = responseData.outfit || responseData
         setOutfits(prev => [newOutfit, ...prev])
         return newOutfit
       } else {
         console.error('Failed to add outfit:', response.status)
+        const errorText = await response.text()
+        console.error('Error response:', errorText)
         return null
       }
     } catch (error) {
@@ -144,7 +144,6 @@ export const useOutfits = () => {
     }
 
     try {
-      // Corrected: Uses the API_BASE_URL variable
       const response = await fetch(`${API_BASE_URL}/api/auth/outfits/${outfitId}/`, {
         method: 'PUT',
         headers: {
@@ -154,13 +153,17 @@ export const useOutfits = () => {
       })
 
       if (response.ok) {
-        const updatedOutfit = await response.json() as Outfit
+        const responseData = await response.json()
+        // Handle both old and new response formats
+        const updatedOutfit = responseData.outfit || responseData
         setOutfits(prevOutfits => 
             prevOutfits.map(outfit => outfit.id === outfitId ? updatedOutfit : outfit)
         )
         return updatedOutfit
       } else {
         console.error('Failed to update outfit:', response.status)
+        const errorText = await response.text()
+        console.error('Error response:', errorText)
         return null
       }
     } catch (error) {
@@ -172,27 +175,51 @@ export const useOutfits = () => {
   const deleteOutfit = async (outfitId: string) => {
     const token = localStorage.getItem('authToken')
     if (!token) {
+      console.error('No auth token for delete')
       return false
     }
 
     try {
-      // Corrected: Uses the API_BASE_URL variable
+      console.log(`🗑️ Deleting outfit ${outfitId}...`)
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/outfits/${outfitId}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
         }
       })
 
-      if (response.ok) {
-        setOutfits(prevOutfits => prevOutfits.filter(outfit => outfit.id !== outfitId))
+      console.log(`Delete response status: ${response.status}`)
+      console.log(`Delete response ok: ${response.ok}`)
+
+      // DELETE requests typically return 204 (No Content) or 200
+      if (response.ok || response.status === 204) {
+        console.log(`✅ Delete successful for outfit ${outfitId}`)
+        
+        // Remove from local state
+        setOutfits(prevOutfits => {
+          const filtered = prevOutfits.filter(outfit => outfit.id !== outfitId)
+          console.log(`Updated outfits count: ${filtered.length} (was ${prevOutfits.length})`)
+          return filtered
+        })
+        
         return true
       } else {
-        console.error('Failed to delete outfit:', response.status)
+        console.error(`❌ Delete failed for outfit ${outfitId}:`, response.status)
+        
+        // Try to get error details
+        try {
+          const errorText = await response.text()
+          console.error('Delete error response:', errorText)
+        } catch (e) {
+          console.error('Could not read error response')
+        }
+        
         return false
       }
     } catch (error) {
-      console.error('Error deleting outfit:', error)
+      console.error(`❌ Delete exception for outfit ${outfitId}:`, error)
       return false
     }
   }
