@@ -25,7 +25,6 @@ export function useAuth() {
       console.error('Login error details:', JSON.stringify(err.response?.data, null, 2))
       console.error('Full error object:', err)
       
-      
       let errorMessage = 'Login failed'
       
       if (err.response?.data) {
@@ -67,10 +66,36 @@ export function useAuth() {
     
     try {
       console.log('Sending register request with:', userData)
-      const response = await API.post('/auth/register/', userData)
+      
+      // Ensure we have all required fields properly mapped
+      const registrationData = {
+        username: userData.username || '', // Make sure username is not undefined
+        email: userData.email || '',
+        first_name: userData.first_name || '', // Optional
+        last_name: userData.last_name || '',   // Optional
+        password: userData.password || '',
+        password_confirm: userData.password_confirm || ''
+      }
+      
+      // Debug log to see exactly what we're sending
+      console.log('Processed registration data:', registrationData)
+      
+      // Validate required fields before sending
+      if (!registrationData.username.trim()) {
+        throw new Error('Username is required')
+      }
+      if (!registrationData.email.trim()) {
+        throw new Error('Email is required')
+      }
+      if (!registrationData.password.trim()) {
+        throw new Error('Password is required')
+      }
+      
+      const response = await API.post('/auth/register/', registrationData)
       return response.data
     } catch (err: any) {
       console.error('Register error details:', JSON.stringify(err.response?.data, null, 2))
+      console.error('Registration failed:', err)
       
       const errorData = err.response?.data
       let errorMessage = 'Registration failed'
@@ -84,8 +109,16 @@ export function useAuth() {
           errorMessage = `Password: ${errorData.password[0]}`
         } else if (errorData.non_field_errors) {
           errorMessage = errorData.non_field_errors[0]
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData
         } else {
-          errorMessage = `Error: ${JSON.stringify(errorData)}`
+          // Handle field-specific errors
+          const firstError = Object.entries(errorData)[0]
+          if (firstError) {
+            const [field, messages] = firstError
+            const message = Array.isArray(messages) ? messages[0] : messages
+            errorMessage = `${field}: ${message}`
+          }
         }
       }
       
@@ -96,5 +129,5 @@ export function useAuth() {
     }
   }
 
-  return { login, register, loading, error }
+  return { login, register, loading, error, setError }
 }

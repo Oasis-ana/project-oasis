@@ -36,6 +36,12 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    console.log('=== FORM DATA DEBUG ===')
+    console.log('formData.username:', formData.username)
+    console.log('formData.email:', formData.email) 
+    console.log('Full formData:', formData)
+    console.log('========================')
+
     if (formData.password !== formData.password_confirm) {
       setPasswordError('Passwords do not match')
       return
@@ -122,7 +128,7 @@ export default function SignupPage() {
                 alignItems: 'center',
                 position: 'relative'
               }}>
-                {!formData.first_name && (
+                {!formData.username && (
                   <span style={{
                     color: '#000',
                     fontFamily: 'Inter',
@@ -140,8 +146,8 @@ export default function SignupPage() {
                 )}
                 <input
                   type="text"
-                  name="first_name"
-                  value={formData.first_name}
+                  name="username"
+                  value={formData.username}
                   onChange={handleChange}
                   required
                   style={{
