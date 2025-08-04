@@ -17,6 +17,7 @@ export default function SignupPage() {
     password_confirm: ''
   })
   const [passwordError, setPasswordError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -26,10 +27,11 @@ export default function SignupPage() {
       ...(name === 'first_name' && { username: value.toLowerCase().replace(/\s+/g, '') })
     })
     
-    
+    // Clear errors when user types
     if (name === 'password' || name === 'password_confirm') {
       setPasswordError('')
     }
+    setSuccessMessage('')
   } 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,9 +44,21 @@ export default function SignupPage() {
 
     try {
       await register(formData)
-      router.push('/login')
-    } catch (err) {
+      setSuccessMessage('Account created successfully! Redirecting to login...')
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
+    } catch (err: any) {
       console.error('Registration failed:', err)
+      
+      // Check if it's a timeout error but registration might have succeeded
+      if (err.message && err.message.includes('may have been created')) {
+        setSuccessMessage('Registration might have succeeded! Please try logging in.')
+        setTimeout(() => {
+          router.push('/login')
+        }, 3000)
+      }
+      // Other errors are handled by useAuth hook
     }
   }
 
@@ -78,11 +92,21 @@ export default function SignupPage() {
           </div>
 
           {error && (
-            <p className="mb-3 text-center text-red-600 font-semibold">{error}</p>
+            <div className="mb-3 p-3 bg-red-100 border border-red-400 rounded-lg max-w-sm">
+              <p className="text-center text-red-600 font-semibold text-sm">{error}</p>
+            </div>
           )}
 
           {passwordError && (
-            <p className="mb-3 text-center text-red-600 font-semibold">{passwordError}</p>
+            <div className="mb-3 p-3 bg-red-100 border border-red-400 rounded-lg max-w-sm">
+              <p className="text-center text-red-600 font-semibold text-sm">{passwordError}</p>
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mb-3 p-3 bg-green-100 border border-green-400 rounded-lg max-w-sm">
+              <p className="text-center text-green-600 font-semibold text-sm">{successMessage}</p>
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5 flex flex-col items-center">
@@ -108,13 +132,59 @@ export default function SignupPage() {
                     left: '16px',
                     pointerEvents: 'none'
                   }}>
-                    Username <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
+                    First Name <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
                   </span>
                 )}
                 <input
                   type="text"
                   name="first_name"
                   value={formData.first_name}
+                  onChange={handleChange}
+                  required
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    width: '100%',
+                    height: '100%',
+                    padding: '0 16px',
+                    fontSize: '16px',
+                    fontFamily: 'Inter',
+                    color: '#000'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="relative">
+              <div style={{
+                width: '300px',
+                height: '50px',
+                background: 'rgba(217, 217, 217, 0.40)',
+                display: 'flex',
+                alignItems: 'center',
+                position: 'relative'
+              }}>
+                {!formData.last_name && (
+                  <span style={{
+                    color: '#000',
+                    fontFamily: 'Inter',
+                    fontSize: '16px',
+                    fontStyle: 'normal',
+                    fontWeight: 200,
+                    lineHeight: 'normal',
+                    letterSpacing: '0.32px',
+                    position: 'absolute',
+                    left: '16px',
+                    pointerEvents: 'none'
+                  }}>
+                    Last Name <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
+                  </span>
+                )}
+                <input
+                  type="text"
+                  name="last_name"
+                  value={formData.last_name}
                   onChange={handleChange}
                   required
                   style={{
@@ -297,19 +367,35 @@ export default function SignupPage() {
               style={{
                 width: '300px',
                 height: '50px',
-                background: '#0B2C21',
+                background: loading ? '#6B7280' : '#0B2C21',
                 color: 'white',
                 border: 'none',
                 fontSize: '18px',
                 fontWeight: 'medium',
-                cursor: 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 marginTop: '6px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                opacity: loading ? 0.7 : 1,
+                transition: 'all 0.2s'
               }}
             >
-              {loading ? 'Creating Account...' : 'Register'}
+              {loading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid #ffffff',
+                    borderTop: '2px solid transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}></div>
+                  Creating Account...
+                </div>
+              ) : (
+                'Register'
+              )}
             </button>
           </form>
         </div>
@@ -326,6 +412,13 @@ export default function SignupPage() {
           className="object-cover"
         />
       </div>
+
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 }

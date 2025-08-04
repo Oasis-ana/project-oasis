@@ -7,7 +7,7 @@ const API = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 seconds timeout
+  timeout: 60000, // Increased to 60 seconds
 });
 
 // Request interceptor for adding auth token
@@ -33,9 +33,11 @@ API.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 API.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('API Error:', error);
+    
     if (error.code === 'ECONNABORTED') {
       console.error('Request timeout - operation took too long');
-      error.message = 'Request timed out. Please try again.';
+      error.message = 'Registration is taking longer than expected. If you see this message, your account may have been created successfully. Please try logging in.';
     }
 
     if (error.response?.status === 401) {
@@ -50,6 +52,13 @@ API.interceptors.response.use(
     if (error.response?.status === 500) {
       console.error('Server error occurred');
       error.message = 'Server error. Please try again later.';
+    }
+
+    if (error.response?.status === 400) {
+      console.error('Bad request:', error.response.data);
+      error.message = error.response.data?.message || 
+                     Object.values(error.response.data || {})[0] || 
+                     'Invalid request data.';
     }
 
     return Promise.reject(error);
