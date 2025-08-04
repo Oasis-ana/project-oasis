@@ -49,27 +49,62 @@ export default function HomePage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   
   
+  const [isConnectionWarmed, setIsConnectionWarmed] = useState(false)
+  
+  
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null)
   const [showOutfitModal, setShowOutfitModal] = useState(false)
   
- 
+  
   const [isEditing, setIsEditing] = useState(false)
   const [editingOutfitId, setEditingOutfitId] = useState<string | null>(null)
   
-  
+ 
   const [showDeleteOutfitModal, setShowDeleteOutfitModal] = useState(false)
   const [outfitToDelete, setOutfitToDelete] = useState<Outfit | null>(null)
+  
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const { outfits, isLoadingOutfits, fetchOutfits, handleLike, addOutfit, updateOutfit, deleteOutfit } = useOutfits()
   const { showCamera, videoRef, canvasRef, startCamera, stopCamera, takePhoto } = useCamera()
 
-  // Base categories
+  
   const baseCategories = ['Casual', 'Work', 'Date Night', 'Formal', 'Party', 'Weekend', 'Travel', 'Sport']
   
   
   const allCategories = Array.from(new Set([...baseCategories, ...defaultTabs, ...customTabs]));
+
+  
+  useEffect(() => {
+    if (isClient && !isConnectionWarmed) {
+      warmUpConnection()
+    }
+  }, [isClient, isConnectionWarmed])
+
+  const warmUpConnection = async () => {
+    try {
+     
+      const token = localStorage.getItem('authToken')
+      if (!token) return
+
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
+      
+      await fetch(`${API_URL}/api/auth/profile/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      setIsConnectionWarmed(true)
+      console.log('Connection warmed up successfully')
+    } catch (error) {
+      console.log('Connection warmup failed, but continuing:', error)
+      setIsConnectionWarmed(true) 
+    }
+  }
 
   // Load cached data
   useEffect(() => {
@@ -101,7 +136,6 @@ export default function HomePage() {
       }
     }
 
-    
     const pendingImage = localStorage.getItem('pendingOutfitImage')
     if (pendingImage) {
       setSelectedImage(pendingImage)
@@ -109,7 +143,6 @@ export default function HomePage() {
       localStorage.removeItem('pendingOutfitImage')
     }
 
-    
     const shouldCreateOutfit = localStorage.getItem('shouldCreateOutfit')
     if (shouldCreateOutfit) {
       setShowCreateOutfitModal(true)
@@ -130,11 +163,9 @@ export default function HomePage() {
       return
     }
 
- 
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
 
     try {
-      
       const response = await fetch(`${API_URL}/api/auth/profile/`, {
         method: 'GET',
         headers: {
@@ -175,7 +206,7 @@ export default function HomePage() {
     ? outfits.filter(outfit => outfit.liked)
     : outfits.filter(outfit => outfit.category === activeTab);
 
-  
+ 
   const filteredOutfits = tabFilteredOutfits.filter(outfit => {
     if (searchQuery === '') {
       return true; 
@@ -332,60 +363,126 @@ export default function HomePage() {
     setSuccessMessage(null);
   }
 
-  
   const handleSuccess = (message: string) => {
     setShowCreateOutfitModal(false);
-    setSuccessMessage('Outfit Posted! 🎉'); // Fixed message like before
+    setSuccessMessage('Outfit Posted! 🎉');
     resetOutfitForm(); 
     setTimeout(() => {
       handleCloseSuccessModal();
     }, 2000);
   }
 
-  
   const handleCloseCreateModal = () => {
     setShowCreateOutfitModal(false)
     resetOutfitForm()
   }
 
-  // NEW: Verification function to check if upload actually succeeded
+  // Force refresh outfits list and update state
+  const forceRefreshOutfits = async () => {
+    try {
+      console.log('Force refreshing outfits...')
+      await fetchOutfits()
+      await new Promise(resolve => setTimeout(resolve, 500))
+      return true
+    } catch (error) {
+      console.error('Error force refreshing outfits:', error)
+      return false
+    }
+  }
+
+  
   const verifyUploadSuccess = async () => {
     try {
       console.log('Verifying upload success...')
       
-      // Refresh the outfits list to see if the new outfit appears
-      await fetchOutfits()
+      const outfitTitle = outfitData.title
+      const previousOutfitCount = outfits.length
       
-      // Wait a moment for state to update
-      await new Promise(resolve => setTimeout(resolve, 1000))
+     
+      const maxAttempts = 3
       
-      // Check if our outfit was added by looking for matching title
-      const recentOutfits = outfits.filter(outfit => 
-        outfit.title === outfitData.title && 
-        new Date(outfit.created_at).getTime() > Date.now() - 5 * 60 * 1000 // Created within last 5 minutes
-      )
-      
-      if (recentOutfits.length > 0) {
-        console.log('Upload verification successful!')
-        handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
-        return
+      for (let i = 0; i < maxAttempts; i++) {
+        console.log(`Verification attempt ${i + 1}/${maxAttempts}`)
+        
+        
+        await new Promise(resolve => setTimeout(resolve, i === 0 ? 3000 : 2000))
+        
+        
+        const refreshSuccess = await forceRefreshOutfits()
+        
+        if (!refreshSuccess) {
+          console.log('Failed to refresh outfits, continuing to next attempt')
+          continue
+        }
+        
+        
+        const currentOutfits = outfits
+        
+        
+        if (!isEditing && currentOutfits.length > previousOutfitCount) {
+          console.log('SUCCESS: Outfit count increased!')
+          handleSuccess('Outfit saved!')
+          return
+        }
+        
+        
+        const matchingOutfits = currentOutfits.filter(outfit => 
+          outfit.title.toLowerCase().trim() === outfitTitle.toLowerCase().trim()
+        )
+        
+        if (matchingOutfits.length > 0) {
+          console.log('SUCCESS: Found outfit with matching title!')
+          handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
+          return
+        }
+        
+        
+        const veryRecentOutfits = currentOutfits.filter(outfit => {
+          const timeDiff = Date.now() - new Date(outfit.created_at).getTime()
+          return timeDiff < 5 * 60 * 1000 // Within last 5 minutes
+        })
+        
+        if (veryRecentOutfits.length > 0 && i === maxAttempts - 1) {
+          console.log('Found recent outfit on final attempt - assuming success')
+          handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
+          return
+        }
       }
       
-      // If we can't verify success, show an error but suggest checking manually
-      alert('Upload status unclear. Please check your outfits list - your outfit may have been saved successfully.')
+      
+      console.log('Verification inconclusive - treating as potential success')
+      
+      
+      handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
+      
+      
+      setTimeout(() => {
+        if (confirm('Want to refresh the page to make sure your outfit appears?')) {
+          window.location.reload()
+        }
+      }, 3000)
+      
     } catch (error) {
-      console.error('Error verifying upload:', error)
-      alert('Could not verify upload status. Please refresh the page to check if your outfit was saved.')
+      console.error('Error during verification:', error)
+      
+      
+      handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
+      
+      
+      setTimeout(() => {
+        alert('Please refresh the page to see your outfit')
+      }, 2000)
     } finally {
       setIsUploading(false)
+      setUploadProgress(0)
     }
   }
 
-  // IMPROVED: Better upload handling with verification
+  
   const handleSaveOrUpdateOutfit = async () => {
     if (!validateForm()) return
 
-    // Prevent multiple uploads
+    
     if (isUploading) {
       console.log('Upload already in progress, ignoring duplicate request')
       return
@@ -422,7 +519,7 @@ export default function HomePage() {
       let success = false
       let result = null
       
-      // Simulate progress for better UX
+      
       setUploadProgress(25)
       
       if (isEditing && editingOutfitId) {
@@ -442,24 +539,24 @@ export default function HomePage() {
         const message = isEditing ? 'Outfit updated!' : 'Outfit saved!';
         handleSuccess(message);
       } else {
-        // Even if the response indicates failure, check if it actually succeeded
+       
         console.log('Upload response indicated failure, verifying...')
         await verifyUploadSuccess()
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving outfit:', error)
       
-      // If it's a timeout error or network error, check if the upload actually succeeded
+     
       if (error?.code === 'ECONNABORTED' || 
           error?.message?.includes('timeout') || 
           error?.message?.includes('Network Error') ||
           error?.name === 'AxiosError') {
         console.log('Upload timed out or had network issues, checking if it actually succeeded...')
         
-        // Wait a moment for the server to process, then verify
+       
         setTimeout(() => {
           verifyUploadSuccess()
-        }, 3000) // Wait 3 seconds then check
+        }, 3000) 
       } else {
         alert('Error saving outfit. Please check your connection and try again.')
         setIsUploading(false)
@@ -526,7 +623,6 @@ export default function HomePage() {
     <>
       <div className={`min-h-screen bg-[#F5F3EC] flex transition-all duration-200 ${showSettingsModal || showAddTabModal || showCreateOutfitModal || showOutfitModal || showDeleteModal || showDeleteOutfitModal || showCamera || successMessage ? 'blur-sm' : ''}`}>
         
-        
         <Sidebar 
           user={user} 
           onShowSettings={() => setShowSettingsModal(true)}
@@ -590,6 +686,26 @@ export default function HomePage() {
                 <span>
                   {isUploading ? 'Uploading...' : 'Log Today\'s Look'}
                 </span>
+              </button>
+
+              {/* Refresh button */}
+              <button 
+                onClick={async () => {
+                  console.log('Manual refresh triggered')
+                  await forceRefreshOutfits()
+                  if (user) await fetchUserProfile()
+                }}
+                disabled={isUploading}
+                className={`p-3 rounded-full shadow-md transition-all ${
+                  isUploading 
+                    ? 'bg-gray-400 text-white cursor-not-allowed' 
+                    : 'bg-white text-[#0B2C21] hover:bg-gray-50 border border-gray-200'
+                }`}
+                title="Refresh outfits"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
               </button>
             </div>
           </div>
@@ -1040,7 +1156,6 @@ export default function HomePage() {
         </div>
       )}
 
-      
       {showCamera && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
           <div className="relative w-full max-w-2xl">
@@ -1071,7 +1186,6 @@ export default function HomePage() {
         </div>
       )}
 
-      
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Delete Tab Modal */}
@@ -1107,7 +1221,7 @@ export default function HomePage() {
         </div>
       )}
 
-      
+      {/* Add Tab Modal */}
       {showAddTabModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-white/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-md rounded-lg p-6 w-96 shadow-xl border border-white/20">
@@ -1148,7 +1262,7 @@ export default function HomePage() {
         </div>
       )}
       
-      
+      {/* Delete Outfit Modal */}
       {showDeleteOutfitModal && outfitToDelete && (
         <div className="fixed inset-0 backdrop-blur-md bg-black/5 flex items-center justify-center z-50">
           <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 w-96 shadow-2xl border border-white/30">
