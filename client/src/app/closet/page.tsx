@@ -1241,14 +1241,13 @@ export default function ClosetPage() {
                             className={`absolute top-3 right-3 p-2 rounded-full transition-all ${
                               item.isFavorite 
                                 ? 'bg-yellow-500 text-white shadow-md' 
-                                : 'bg-white/90 text-gray-600 opacity-0 group-hover:opacity-100 hover:bg-yellow-100 hover:text-yellow-600'
+                                : 'bg-white/90 text-gray-600 hover:bg-yellow-100 hover:text-yellow-600'
                             }`}
                             title={item.isFavorite ? "Remove from favorites" : "Add to favorites"}
                           >
-                            <Star className={`w-5 h-5 ${item.isFavorite ? 'fill-current' : ''}`} />
+                            <Star className={`w-4 h-4 ${item.isFavorite ? 'fill-current' : ''}`} />
                           </button>
                           
-                          {/* Edit and Delete buttons in center (only on hover) */}
                           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all flex space-x-3">
                             <button
                               onClick={(e) => {
