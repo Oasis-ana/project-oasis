@@ -12,7 +12,7 @@ export default function SignupPage() {
     username: '',
     email: '',
     first_name: '',
-    last_name: '',
+    last_name: '', 
     password: '',
     password_confirm: ''
   })
@@ -24,6 +24,7 @@ export default function SignupPage() {
     setFormData({
       ...formData,
       [name]: value,
+      // Auto-generate username from first name (required field)
       ...(name === 'first_name' && { username: value.toLowerCase().replace(/\s+/g, '') })
     })
     
@@ -43,20 +44,24 @@ export default function SignupPage() {
     }
 
     try {
+      // Show immediate feedback
+      setSuccessMessage('Creating your account...')
+      
       await register(formData)
       setSuccessMessage('Account created successfully! Redirecting to login...')
       setTimeout(() => {
         router.push('/login')
-      }, 2000)
+      }, 1500) // Faster redirect
     } catch (err: any) {
       console.error('Registration failed:', err)
+      setSuccessMessage('') // Clear success message on error
       
       // Check if it's a timeout error but registration might have succeeded
       if (err.message && err.message.includes('may have been created')) {
         setSuccessMessage('Registration might have succeeded! Please try logging in.')
         setTimeout(() => {
           router.push('/login')
-        }, 3000)
+        }, 2500)
       }
       // Other errors are handled by useAuth hook
     }

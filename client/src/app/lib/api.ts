@@ -7,15 +7,14 @@ const API = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // Increased to 60 seconds
+  timeout: 30000, 
 });
 
-// Request interceptor for adding auth token
+
 API.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const publicEndpoints = ['/auth/register/', '/auth/login/'];
 
-  // More precise check for public endpoints:
-  // Remove baseURL from URL to get relative path for matching
+ 
   const urlPath = config.url?.replace(config.baseURL || '', '');
   const isPublicEndpoint = publicEndpoints.some(endpoint => urlPath === endpoint);
 
@@ -29,7 +28,7 @@ API.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-// Response interceptor for error handling
+
 API.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -41,7 +40,7 @@ API.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      // Token expired or invalid, redirect to login
+      
       console.error('Authentication failed');
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authToken');
@@ -66,7 +65,7 @@ API.interceptors.response.use(
 );
 
 /**
- * @param {string | null} token The auth token received from the API.
+ * @param {string | null} 
  */
 export const setAuthToken = (token: string | null) => {
   if (typeof window !== 'undefined') {
@@ -95,11 +94,11 @@ export const deleteItem = async (itemId: string, endpoint: string = 'items', ret
       console.error(`Delete attempt ${i + 1} failed:`, error.message);
 
       if (i === retries) {
-        // Final attempt failed, throw the error
+    
         throw new Error(error.response?.data?.message || error.message || 'Delete failed');
       }
 
-      // Wait before retry with exponential backoff
+     
       const delay = 1000 * Math.pow(2, i); // 1s, 2s, 4s...
       console.log(`Retrying delete in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -108,7 +107,7 @@ export const deleteItem = async (itemId: string, endpoint: string = 'items', ret
 };
 
 /**
- * Generic API methods with better error handling
+  * API methods for GET, POST, PUT, DELETE requests
  */
 export const apiMethods = {
   get: async (url: string) => {
