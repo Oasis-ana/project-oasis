@@ -37,28 +37,34 @@ export default function AddItemModal({
   const localFileInputRef = useRef<HTMLInputElement>(null)
   
   const startCamera = () => {
-    if (onCameraClick) {
-      onCameraClick();
-    } else {
-      alert("Camera functionality is not available. Please upload a photo.");
-    }
+    onCameraClick();
   }
 
-  const triggerFileUpload = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleUploadClick = () => {
+    console.log('Upload button clicked!')
     
-    console.log('Upload button clicked')
-    console.log('Local ref:', localFileInputRef.current)
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
     
-    const inputToUse = localFileInputRef.current
-    
-    if (inputToUse) {
-      console.log('Triggering click on input')
-      inputToUse.click()
+    if (fileInput) {
+      console.log('Found file input, clicking it')
+      fileInput.click()
     } else {
-      console.error('No file input available')
-      alert('File upload not working. Please refresh the page.')
+      console.log('Creating new file input')
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.onchange = (e) => {
+        const target = e.target as HTMLInputElement
+        if (target.files?.[0]) {
+          console.log('File selected via created input')
+          const fakeEvent = {
+            target: target,
+            currentTarget: target
+          } as React.ChangeEvent<HTMLInputElement>
+          handleFileUpload(fakeEvent)
+        }
+      }
+      input.click()
     }
   }
 
@@ -95,7 +101,7 @@ export default function AddItemModal({
                 </button>
                 
                 <button
-                  onClick={triggerFileUpload}
+                  onClick={handleUploadClick}
                   className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#0B2C21] hover:bg-gray-50 transition-colors"
                   type="button"
                 >
@@ -111,10 +117,11 @@ export default function AddItemModal({
                 type="file"
                 accept="image/*"
                 onChange={(e) => {
-                  console.log('File input changed:', e.target.files?.[0])
+                  console.log('File input onChange triggered:', e.target.files?.[0])
                   handleFileUpload(e)
                 }}
                 className="hidden"
+                style={{ display: 'none' }}
               />
             </div>
           ) : (
@@ -143,7 +150,7 @@ export default function AddItemModal({
                     Take New Photo
                   </button>
                   <button
-                    onClick={triggerFileUpload}
+                    onClick={handleUploadClick}
                     className="px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     style={{ fontFamily: 'Playfair Display, serif' }}
                   >
