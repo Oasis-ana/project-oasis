@@ -41,9 +41,12 @@ export default function ClosetPage() {
   const [addedItems, setAddedItems] = useState<Set<string>>(new Set())
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<ClothingItem | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [showAddItemModal, setShowAddItemModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const [itemData, setItemData] = useState({
     name: '',
     brand: '',
@@ -73,6 +76,15 @@ export default function ClosetPage() {
   })
   
   const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({})
+
+  // Success message display function
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message)
+    setShowSuccessMessage(true)
+    setTimeout(() => {
+      setShowSuccessMessage(false)
+    }, 3000)
+  }
 
   const handleImageLoad = (itemId: string) => {
     setImageLoadingStates(prev => ({ ...prev, [itemId]: false }))
@@ -472,6 +484,7 @@ export default function ClosetPage() {
         }
 
         setClothingItems(prev => [...prev, newItem])
+        showSuccess(`${newItem.name} added to your closet!`)
         console.log('✅ Item added successfully:', newItem.name)
       }
       else {
@@ -573,6 +586,7 @@ export default function ClosetPage() {
         }
 
         setClothingItems(prev => [...prev, newItem])
+        showSuccess(`${newItem.name} added to your closet!`)
         console.log('✅ Item with URL reference added successfully!')
         
         setAddedItems(prev => new Set([...prev, selectedCatalogItem.id]))
@@ -667,6 +681,8 @@ export default function ClosetPage() {
       return
     }
 
+    setIsDeleting(true)
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${itemToDelete.id}/`, {
         method: 'DELETE',
@@ -678,18 +694,23 @@ export default function ClosetPage() {
 
       if (response.ok) {
         setClothingItems(prev => prev.filter(item => item.id !== itemToDelete.id))
+        showSuccess(`${itemToDelete.name} removed from your closet`)
         console.log('✅ Item deleted successfully:', itemToDelete.name)
       }
       else {
         console.error('❌ Failed to delete item from backend')
+        alert('Failed to delete item. Please try again.')
       }
     }
     catch (error) {
       console.error('❌ Error deleting item:', error)
+      alert('Error deleting item. Please check your connection and try again.')
     }
-
-    setShowDeleteModal(false)
-    setItemToDelete(null)
+    finally {
+      setIsDeleting(false)
+      setShowDeleteModal(false)
+      setItemToDelete(null)
+    }
   }
 
   const cancelDelete = () => {
@@ -799,6 +820,7 @@ export default function ClosetPage() {
         }
 
         setClothingItems(prev => [...prev, newItem])
+        showSuccess(`${newItem.name} added to your closet!`)
         console.log('✅ Item added successfully!')
         
         resetForm()
@@ -960,6 +982,14 @@ export default function ClosetPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F3EC] flex">
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="fixed top-6 right-6 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3">
+          <Check className="w-5 h-5" />
+          <span style={{ fontFamily: 'Inter' }}>{successMessage}</span>
+        </div>
+      )}
+
       {/* Sidebar  */}
       <Sidebar 
         user={user} 
@@ -1473,29 +1503,39 @@ export default function ClosetPage() {
         onPhotoTaken={handlePhotoTakenFromModal}
       />
 
+      {/* Updated Delete Modal with better contrast and loading state */}
       {showDeleteModal && itemToDelete && (
-        <div className="fixed inset-0 backdrop-blur-md bg-black/5 flex items-center justify-center z-50">
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 w-96 shadow-2xl border border-white/30">
-            <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Confirm Deletion
+        <div className="fixed inset-0 backdrop-blur-md bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 shadow-2xl">
+            <h3 className="text-xl font-bold mb-4 text-gray-900" style={{ fontFamily: 'Playfair Display, serif' }}>
+              Delete Item
             </h3>
-            <p className="mb-6 text-gray-600" style={{ fontFamily: 'Inter' }}>
-              Are you sure you want to delete <span className="font-bold text-gray-800">{itemToDelete.name}</span>? This action cannot be undone.
+            <p className="mb-6 text-gray-700" style={{ fontFamily: 'Inter' }}>
+              Are you sure you want to delete <span className="font-bold text-gray-900">{itemToDelete.name}</span>? This action cannot be undone.
             </p>
             <div className="flex justify-center space-x-4">
               <button 
                 onClick={cancelDelete}
-                className="px-4 py-2 rounded-lg text-gray-600 bg-gray-100/80 hover:bg-gray-200/80 transition-colors"
+                disabled={isDeleting}
+                className="px-6 py-2 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
                 style={{ fontFamily: 'Inter' }}
               >
                 Cancel
               </button>
               <button 
                 onClick={confirmDeleteItem}
-                className="px-4 py-2 bg-red-500/90 text-white hover:bg-red-600/90 transition-colors"
+                disabled={isDeleting}
+                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center space-x-2"
                 style={{ fontFamily: 'Inter' }}
               >
-                Delete
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <span>Delete</span>
+                )}
               </button>
             </div>
           </div>
