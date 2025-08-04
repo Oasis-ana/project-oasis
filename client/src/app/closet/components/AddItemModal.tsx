@@ -44,15 +44,21 @@ export default function AddItemModal({
     }
   }
 
-  const triggerFileUpload = () => {
-    const inputRef = fileInputRef?.current || localFileInputRef.current
-    console.log('Triggering file upload, ref:', inputRef)
+  const triggerFileUpload = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     
-    if (inputRef) {
-      inputRef.click()
+    console.log('Upload button clicked')
+    console.log('Local ref:', localFileInputRef.current)
+    
+    const inputToUse = localFileInputRef.current
+    
+    if (inputToUse) {
+      console.log('Triggering click on input')
+      inputToUse.click()
     } else {
-      console.error('No file input ref available')
-      alert('File upload not available. Please try refreshing the page.')
+      console.error('No file input available')
+      alert('File upload not working. Please refresh the page.')
     }
   }
 
@@ -91,6 +97,7 @@ export default function AddItemModal({
                 <button
                   onClick={triggerFileUpload}
                   className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#0B2C21] hover:bg-gray-50 transition-colors"
+                  type="button"
                 >
                   <Upload className="w-12 h-12 text-gray-400 mb-3" />
                   <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -100,10 +107,13 @@ export default function AddItemModal({
               </div>
               
               <input
-                ref={fileInputRef?.current ? fileInputRef : localFileInputRef}
+                ref={localFileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleFileUpload}
+                onChange={(e) => {
+                  console.log('File input changed:', e.target.files?.[0])
+                  handleFileUpload(e)
+                }}
                 className="hidden"
               />
             </div>
