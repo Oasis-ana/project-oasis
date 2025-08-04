@@ -48,7 +48,7 @@ export default function HomePage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   
-  // Connection warmup state (REMOVED DUPLICATE)
+  // Connection warmup state
   const [isConnectionWarmed, setIsConnectionWarmed] = useState(false)
   
   // Outfit viewing states
@@ -75,6 +75,13 @@ export default function HomePage() {
   // All categories combining base, default, and custom tabs
   const allCategories = Array.from(new Set([...baseCategories, ...defaultTabs, ...customTabs]));
 
+  // Helper function for error handling
+  const getErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) return error.message
+    if (typeof error === 'string') return error
+    return 'Unknown error occurred'
+  }
+
   // Warm up the connection on first load
   useEffect(() => {
     if (isClient && !isConnectionWarmed) {
@@ -100,8 +107,8 @@ export default function HomePage() {
       
       setIsConnectionWarmed(true)
       console.log('Connection warmed up successfully')
-    } catch (error) {
-      console.log('Connection warmup failed, but continuing:', error)
+    } catch (err) {
+      console.log('Connection warmup failed, but continuing:', err)
       setIsConnectionWarmed(true) // Set to true anyway
     }
   }
@@ -182,8 +189,8 @@ export default function HomePage() {
         localStorage.removeItem('authToken')
         router.push('/login')
       }
-    } catch (error) {
-      console.error('Network error:', error)
+    } catch (err) {
+      console.error('Network error:', err)
     }
   }
 
@@ -384,8 +391,8 @@ export default function HomePage() {
       await fetchOutfits()
       await new Promise(resolve => setTimeout(resolve, 500))
       return true
-    } catch (error) {
-      console.error('Error force refreshing outfits:', error)
+    } catch (err) {
+      console.error('Error force refreshing outfits:', err)
       return false
     }
   }
@@ -462,8 +469,8 @@ export default function HomePage() {
         }
       }, 3000)
       
-    } catch (error) {
-      console.error('Error during verification:', error)
+    } catch (err) {
+      console.error('Error during verification:', err)
       
       // Assume success and close modal
       handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
@@ -543,8 +550,10 @@ export default function HomePage() {
         console.log('Upload response indicated failure, verifying...')
         await verifyUploadSuccess()
       }
-    } catch (error: any) {
-      console.error('Error saving outfit:', error)
+    } catch (err: unknown) {
+      console.error('Error saving outfit:', err)
+      
+      const error = err as any // Type assertion for accessing properties
       
       // If it's a timeout error or network error, check if the upload actually succeeded
       if (error?.code === 'ECONNABORTED' || 
@@ -570,16 +579,38 @@ export default function HomePage() {
     setShowDeleteOutfitModal(true)
   }
 
+  // FIXED: Optimistic delete with proper modal closing
   const confirmDeleteOutfit = async () => {
     if (!outfitToDelete) return
 
-    const success = await deleteOutfit(outfitToDelete.id)
-
-    if (success) {
+    try {
+      console.log(`Attempting to delete outfit: ${outfitToDelete.id}`)
+      
+      // Close modals immediately for better UX (optimistic UI)
       setShowDeleteOutfitModal(false)
+      setOutfitToDelete(null)
       closeOutfitModal()
-    } else {
-      alert('Failed to delete outfit. Please try again.')
+      
+      // Then perform the delete (which is now optimistic in the hook)
+      const success = await deleteOutfit(outfitToDelete.id)
+      
+      console.log(`Delete result: ${success}`)
+
+      if (!success) {
+        // Only show error if delete actually failed
+        // (outfit will be restored to UI automatically by the hook)
+        alert('Failed to delete outfit. Please try again.')
+      }
+      
+    } catch (err) {
+      console.error('Delete outfit error:', err)
+      
+      // Close modals anyway since we already closed them optimistically
+      setShowDeleteOutfitModal(false)
+      setOutfitToDelete(null)
+      closeOutfitModal()
+      
+      alert(`Error deleting outfit: ${getErrorMessage(err)}`)
     }
   }
 
@@ -1131,8 +1162,7 @@ export default function HomePage() {
         </div>
       )}
 
-
-
+      {/* Camera Modal */}
       {showCamera && (
         <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
           <div className="relative w-full max-w-2xl">
