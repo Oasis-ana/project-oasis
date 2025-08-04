@@ -47,6 +47,7 @@ export default function ClosetPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [itemData, setItemData] = useState({
     name: '',
     brand: '',
@@ -80,10 +81,10 @@ export default function ClosetPage() {
   // Success message display function
   const showSuccess = (message: string) => {
     setSuccessMessage(message)
-    setShowSuccessMessage(true)
+    setShowSuccessModal(true)
     setTimeout(() => {
-      setShowSuccessMessage(false)
-    }, 3000)
+      setShowSuccessModal(false)
+    }, 2000)
   }
 
   const handleImageLoad = (itemId: string) => {
@@ -484,7 +485,7 @@ export default function ClosetPage() {
         }
 
         setClothingItems(prev => [...prev, newItem])
-        showSuccess(`${newItem.name} added to your closet!`)
+        showSuccess("Item Added! 🎉")
         console.log('✅ Item added successfully:', newItem.name)
       }
       else {
@@ -586,7 +587,7 @@ export default function ClosetPage() {
         }
 
         setClothingItems(prev => [...prev, newItem])
-        showSuccess(`${newItem.name} added to your closet!`)
+        showSuccess("Item Added! 🎉")
         console.log('✅ Item with URL reference added successfully!')
         
         setAddedItems(prev => new Set([...prev, selectedCatalogItem.id]))
@@ -690,7 +691,8 @@ export default function ClosetPage() {
       
       // Show optimistic update - remove item from UI immediately
       setClothingItems(prev => prev.filter(item => item.id !== itemToDelete.id))
-      showSuccess(`${itemToDelete.name} removed from your closet`)
+      
+      // Don't show any success message for delete - just remove silently
       
       // Then perform the actual delete in the background
       const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${itemToDelete.id}/`, {
@@ -705,7 +707,7 @@ export default function ClosetPage() {
         console.error('❌ Failed to delete item from backend')
         // Restore the item if delete failed
         setClothingItems(prev => [...prev, itemToDelete])
-        showSuccess(`Failed to delete ${itemToDelete.name}. Please try again.`)
+        alert('Failed to delete item. Please try again.')
       } else {
         console.log('✅ Item deleted successfully:', itemToDelete.name)
       }
@@ -715,7 +717,7 @@ export default function ClosetPage() {
       
       // Restore the item if there was an error
       setClothingItems(prev => [...prev, itemToDelete])
-      showSuccess(`Failed to delete ${itemToDelete.name}. Please check your connection.`)
+      alert('Failed to delete item. Please check your connection.')
     }
   }
 
@@ -799,6 +801,8 @@ export default function ClosetPage() {
       formData.append('is_worn', 'false')
       formData.append('image', blob, 'clothing-item.jpg')
 
+      console.log('Uploading item:', itemData.name)
+
       const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, {
         method: 'POST',
         headers: {
@@ -826,13 +830,16 @@ export default function ClosetPage() {
         }
 
         setClothingItems(prev => [...prev, newItem])
-        showSuccess(`${newItem.name} added to your closet!`)
+        setShowSuccessModal(true)
+        showSuccess("Item Added! 🎉")
         console.log('✅ Item added successfully!')
         
         resetForm()
       }
       else {
-        console.error('❌ Failed to add item')
+        console.error('❌ Failed to add item - Response not OK')
+        const errorText = await response.text()
+        console.error('Error response:', errorText)
         alert('Failed to add item. Please try again.')
       }
     }
@@ -995,11 +1002,24 @@ export default function ClosetPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F3EC] flex">
-      {/* Success Message */}
-      {showSuccessMessage && (
-        <div className="fixed top-6 right-6 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3">
-          <Check className="w-5 h-5" />
-          <span style={{ fontFamily: 'Inter' }}>{successMessage}</span>
+      {/* Success Modal matching home page */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
+          <div className="bg-white/95 backdrop-blur-md rounded-lg p-8 shadow-xl border border-white/20 max-w-sm w-full text-center">
+            <div className="mb-4">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
+                {successMessage}
+              </h3>
+              <p className="text-gray-600" style={{ fontFamily: 'Inter' }}>
+                Your item is now in your closet!
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
