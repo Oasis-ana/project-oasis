@@ -681,9 +681,18 @@ export default function ClosetPage() {
       return
     }
 
-    setIsDeleting(true)
-
     try {
+      console.log(`Attempting to delete item: ${itemToDelete.id}`)
+      
+      // Close modal immediately for better UX (optimistic UI)
+      setShowDeleteModal(false)
+      setItemToDelete(null)
+      
+      // Show optimistic update - remove item from UI immediately
+      setClothingItems(prev => prev.filter(item => item.id !== itemToDelete.id))
+      showSuccess(`${itemToDelete.name} removed from your closet`)
+      
+      // Then perform the actual delete in the background
       const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${itemToDelete.id}/`, {
         method: 'DELETE',
         headers: {
@@ -692,24 +701,21 @@ export default function ClosetPage() {
         }
       })
 
-      if (response.ok) {
-        setClothingItems(prev => prev.filter(item => item.id !== itemToDelete.id))
-        showSuccess(`${itemToDelete.name} removed from your closet`)
-        console.log('✅ Item deleted successfully:', itemToDelete.name)
-      }
-      else {
+      if (!response.ok) {
         console.error('❌ Failed to delete item from backend')
-        alert('Failed to delete item. Please try again.')
+        // Restore the item if delete failed
+        setClothingItems(prev => [...prev, itemToDelete])
+        showSuccess(`Failed to delete ${itemToDelete.name}. Please try again.`)
+      } else {
+        console.log('✅ Item deleted successfully:', itemToDelete.name)
       }
     }
     catch (error) {
       console.error('❌ Error deleting item:', error)
-      alert('Error deleting item. Please check your connection and try again.')
-    }
-    finally {
-      setIsDeleting(false)
-      setShowDeleteModal(false)
-      setItemToDelete(null)
+      
+      // Restore the item if there was an error
+      setClothingItems(prev => [...prev, itemToDelete])
+      showSuccess(`Failed to delete ${itemToDelete.name}. Please check your connection.`)
     }
   }
 
@@ -1503,7 +1509,7 @@ export default function ClosetPage() {
         onPhotoTaken={handlePhotoTakenFromModal}
       />
 
-      {/* Updated Delete Modal with better contrast and loading state */}
+      {/* Updated Delete Modal with simplified design matching home page */}
       {showDeleteModal && itemToDelete && (
         <div className="fixed inset-0 backdrop-blur-md bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 shadow-2xl">
@@ -1516,26 +1522,17 @@ export default function ClosetPage() {
             <div className="flex justify-center space-x-4">
               <button 
                 onClick={cancelDelete}
-                disabled={isDeleting}
-                className="px-6 py-2 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                className="px-6 py-2 rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
                 style={{ fontFamily: 'Inter' }}
               >
                 Cancel
               </button>
               <button 
                 onClick={confirmDeleteItem}
-                disabled={isDeleting}
-                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                 style={{ fontFamily: 'Inter' }}
               >
-                {isDeleting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Deleting...</span>
-                  </>
-                ) : (
-                  <span>Delete</span>
-                )}
+                Delete
               </button>
             </div>
           </div>
