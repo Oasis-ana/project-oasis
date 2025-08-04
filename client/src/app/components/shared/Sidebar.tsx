@@ -1,6 +1,6 @@
 'use client' 
 
-import { Home, Camera, Bell, Settings, X, Upload, Sun, Moon, Cloud, CloudSun, CloudRain, CloudSnow, CloudLightning, LoaderCircle } from 'lucide-react'
+import { Home, Camera, Bell, Settings, X, Upload, Sun, Moon, Cloud, CloudSun, CloudRain, CloudSnow, CloudLightning, LoaderCircle, CloudDrizzle, Wind } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useRef } from 'react'
 import CameraModal from './CameraModal'
@@ -29,18 +29,68 @@ interface ItemData {
   tags: string
 }
 
-const getWeatherIcon = (iconCode: string) => {
+// Updated weather icon function with better condition mapping
+const getWeatherIcon = (weather: any) => {
   const iconProps = { className: "w-6 h-6 text-white" };
-  switch (iconCode) {
-    case '01d': return <Sun {...iconProps} />;
-    case '01n': return <Moon {...iconProps} />;
-    case '02d': return <CloudSun {...iconProps} />;
-    case '02n': return <CloudSun {...iconProps} />;
-    case '03d': case '03n': case '04d': case '04n': return <Cloud {...iconProps} />;
-    case '09d': case '09n': case '10d': case '10n': return <CloudRain {...iconProps} />;
-    case '11d': case '11n': return <CloudLightning {...iconProps} />;
-    case '13d': case '13n': return <CloudSnow {...iconProps} />;
-    default: return <Bell {...iconProps} />;
+  
+  if (!weather || !weather.weather || weather.weather.length === 0) {
+    return <Bell {...iconProps} />;
+  }
+
+  const condition = weather.weather[0].main.toLowerCase();
+  const description = weather.weather[0].description.toLowerCase();
+  const iconCode = weather.weather[0].icon;
+  const isDay = iconCode.endsWith('d');
+
+  // Primary condition-based mapping
+  switch (condition) {
+    case 'clear':
+      return isDay ? <Sun {...iconProps} /> : <Moon {...iconProps} />;
+    
+    case 'rain':
+      if (description.includes('light') || description.includes('drizzle')) {
+        return <CloudDrizzle {...iconProps} />;
+      }
+      return <CloudRain {...iconProps} />;
+    
+    case 'drizzle':
+      return <CloudDrizzle {...iconProps} />;
+    
+    case 'snow':
+      return <CloudSnow {...iconProps} />;
+    
+    case 'thunderstorm':
+      return <CloudLightning {...iconProps} />;
+    
+    case 'clouds':
+      if (description.includes('few') || description.includes('scattered')) {
+        return <CloudSun {...iconProps} />;
+      }
+      return <Cloud {...iconProps} />;
+    
+    case 'mist':
+    case 'fog':
+    case 'haze':
+    case 'smoke':
+      return <Cloud {...iconProps} />;
+    
+    case 'wind':
+      return <Wind {...iconProps} />;
+    
+    default:
+      // Fallback to icon code mapping
+      switch (iconCode) {
+        case '01d': return <Sun {...iconProps} />;
+        case '01n': return <Moon {...iconProps} />;
+        case '02d': case '02n': return <CloudSun {...iconProps} />;
+        case '03d': case '03n': case '04d': case '04n': return <Cloud {...iconProps} />;
+        case '09d': case '09n': return <CloudDrizzle {...iconProps} />;
+        case '10d': case '10n': return <CloudRain {...iconProps} />;
+        case '11d': case '11n': return <CloudLightning {...iconProps} />;
+        case '13d': case '13n': return <CloudSnow {...iconProps} />;
+        case '50d': case '50n': return <Cloud {...iconProps} />;
+        default: return <Bell {...iconProps} />;
+      }
   }
 };
 
@@ -85,6 +135,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
     }
   };
 
+  // Updated render function to use the new weather icon logic
   const renderWeatherIcon = () => {
     if (loading) {
       return <LoaderCircle className="w-6 h-6 text-white animate-spin" />;
@@ -92,7 +143,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
     if (error || !weather) {
       return <Bell className="w-6 h-6 text-white" />;
     }
-    return getWeatherIcon(weather.weather[0].icon);
+    return getWeatherIcon(weather);
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -283,7 +334,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
             <button
               onClick={handleWeatherIconClick}
               className="hover:opacity-75 transition-opacity"
-              title={weather ? "Show Weather Details" : error ? `Error: ${error}`: "Fetching Weather..."}
+              title={weather ? `${weather.weather[0].description} - ${Math.round(weather.main.temp)}°` : error ? `Error: ${error}`: "Fetching Weather..."}
             >
               {renderWeatherIcon()}
             </button>
@@ -438,16 +489,6 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>Brand</label>
-                        <input type="text" value={itemData.brand} onChange={(e) => handleItemInputChange('brand', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] text-gray-900" placeholder="e.g., Zara" style={{ fontFamily: 'Inter' }} />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>Size</label>
-                        <input type="text" value={itemData.size} onChange={(e) => handleItemInputChange('size', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] text-gray-900" placeholder="e.g., M" style={{ fontFamily: 'Inter' }} />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
                         <label className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>Color</label>
                         <input type="text" value={itemData.color} onChange={(e) => handleItemInputChange('color', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] text-gray-900" placeholder="e.g., Blue" style={{ fontFamily: 'Inter' }} />
                       </div>
@@ -490,4 +531,4 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
   )
 }
 
-export default Sidebar;
+export default Sidebar; 
