@@ -45,6 +45,7 @@ export default function HomePage() {
     occasion: ''
   })
   const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   
   
@@ -347,10 +348,51 @@ export default function HomePage() {
     resetOutfitForm()
   }
 
+  // NEW: Verification function to check if upload actually succeeded
+  const verifyUploadSuccess = async () => {
+    try {
+      console.log('Verifying upload success...')
+      
+      // Refresh the outfits list to see if the new outfit appears
+      await fetchOutfits()
+      
+      // Wait a moment for state to update
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Check if our outfit was added by looking for matching title
+      const recentOutfits = outfits.filter(outfit => 
+        outfit.title === outfitData.title && 
+        new Date(outfit.created_at).getTime() > Date.now() - 5 * 60 * 1000 // Created within last 5 minutes
+      )
+      
+      if (recentOutfits.length > 0) {
+        console.log('Upload verification successful!')
+        handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
+        return
+      }
+      
+      // If we can't verify success, show an error but suggest checking manually
+      alert('Upload status unclear. Please check your outfits list - your outfit may have been saved successfully.')
+    } catch (error) {
+      console.error('Error verifying upload:', error)
+      alert('Could not verify upload status. Please refresh the page to check if your outfit was saved.')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  // IMPROVED: Better upload handling with verification
   const handleSaveOrUpdateOutfit = async () => {
     if (!validateForm()) return
 
+    // Prevent multiple uploads
+    if (isUploading) {
+      console.log('Upload already in progress, ignoring duplicate request')
+      return
+    }
+
     setIsUploading(true)
+    setUploadProgress(0)
     
     const formData = new FormData()
     formData.append('title', outfitData.title)
@@ -378,25 +420,51 @@ export default function HomePage() {
 
     try {
       let success = false
+      let result = null
+      
+      // Simulate progress for better UX
+      setUploadProgress(25)
+      
       if (isEditing && editingOutfitId) {
-        const updated = await updateOutfit(editingOutfitId, formData)
-        success = !!updated
+        setUploadProgress(50)
+        result = await updateOutfit(editingOutfitId, formData)
+        success = !!result
       } else {
-        const added = await addOutfit(formData)
-        success = !!added
+        setUploadProgress(50)
+        result = await addOutfit(formData)
+        success = !!result
       }
       
+      setUploadProgress(75)
+      
       if (success) {
+        setUploadProgress(100)
         const message = isEditing ? 'Outfit updated!' : 'Outfit saved!';
         handleSuccess(message);
       } else {
-        alert('Failed to save outfit. Please try again.')
+        // Even if the response indicates failure, check if it actually succeeded
+        console.log('Upload response indicated failure, verifying...')
+        await verifyUploadSuccess()
       }
     } catch (error) {
       console.error('Error saving outfit:', error)
-      alert('Error saving outfit. Please check your connection and try again.')
-    } finally {
-      setIsUploading(false)
+      
+      // If it's a timeout error or network error, check if the upload actually succeeded
+      if (error?.code === 'ECONNABORTED' || 
+          error?.message?.includes('timeout') || 
+          error?.message?.includes('Network Error') ||
+          error?.name === 'AxiosError') {
+        console.log('Upload timed out or had network issues, checking if it actually succeeded...')
+        
+        // Wait a moment for the server to process, then verify
+        setTimeout(() => {
+          verifyUploadSuccess()
+        }, 3000) // Wait 3 seconds then check
+      } else {
+        alert('Error saving outfit. Please check your connection and try again.')
+        setIsUploading(false)
+        setUploadProgress(0)
+      }
     }
   }
 
@@ -422,6 +490,7 @@ export default function HomePage() {
     setIsEditing(false)
     setEditingOutfitId(null)
     setSelectedImage(null)
+    setUploadProgress(0)
     setOutfitData({
       title: '',
       description: '',
@@ -509,12 +578,17 @@ export default function HomePage() {
 
               <button 
                 onClick={handleLogTodaysLook}
-                className="bg-[#0B2C21] text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:opacity-90 shadow-md"
+                disabled={isUploading}
+                className={`px-6 py-3 rounded-full flex items-center space-x-2 shadow-md transition-all ${
+                  isUploading 
+                    ? 'bg-gray-400 text-white cursor-not-allowed' 
+                    : 'bg-[#0B2C21] text-white hover:opacity-90'
+                }`}
                 style={{ fontFamily: 'Inter', fontSize: '14px', fontWeight: '500' }}
               >
                 <Plus className="w-4 h-4" />
                 <span>
-                  Log Today's Look
+                  {isUploading ? 'Uploading...' : 'Log Today\'s Look'}
                 </span>
               </button>
             </div>
@@ -689,9 +763,14 @@ export default function HomePage() {
               </h3>
               <button
                 onClick={handleCloseCreateModal}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                disabled={isUploading}
+                className={`p-2 rounded-full transition-colors ${
+                  isUploading 
+                    ? 'cursor-not-allowed text-gray-400' 
+                    : 'hover:bg-gray-100 text-gray-500'
+                }`}
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -704,7 +783,12 @@ export default function HomePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       onClick={() => startCamera('user')}
-                      className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#0B2C21] hover:bg-gray-50 transition-colors"
+                      disabled={isUploading}
+                      className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors ${
+                        isUploading
+                          ? 'border-gray-200 cursor-not-allowed'
+                          : 'border-gray-300 hover:border-[#0B2C21] hover:bg-gray-50'
+                      }`}
                     >
                       <Camera className="w-12 h-12 text-gray-400 mb-3" />
                       <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -714,7 +798,12 @@ export default function HomePage() {
                     
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#0B2C21] hover:bg-gray-50 transition-colors"
+                      disabled={isUploading}
+                      className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors ${
+                        isUploading
+                          ? 'border-gray-200 cursor-not-allowed'
+                          : 'border-gray-300 hover:border-[#0B2C21] hover:bg-gray-50'
+                      }`}
                     >
                       <Upload className="w-12 h-12 text-gray-400 mb-3" />
                       <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -728,6 +817,7 @@ export default function HomePage() {
                     type="file"
                     accept="image/*"
                     onChange={handleFileUpload}
+                    disabled={isUploading}
                     className="hidden"
                   />
                 </div>
@@ -742,7 +832,12 @@ export default function HomePage() {
                       />
                       <button
                         onClick={() => setSelectedImage(null)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                        disabled={isUploading}
+                        className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
+                          isUploading
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : 'bg-red-500 text-white hover:bg-red-600'
+                        }`}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -751,14 +846,24 @@ export default function HomePage() {
                     <div className="flex flex-col space-y-3">
                       <button
                         onClick={() => startCamera('user')}
-                        className="px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        disabled={isUploading}
+                        className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                          isUploading
+                            ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                            : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                        }`}
                         style={{ fontFamily: 'Playfair Display, serif' }}
                       >
                         Take New Photo
                       </button>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        disabled={isUploading}
+                        className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                          isUploading
+                            ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                            : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                        }`}
                         style={{ fontFamily: 'Playfair Display, serif' }}
                       >
                         Choose Different Photo
@@ -776,7 +881,10 @@ export default function HomePage() {
                         id="title"
                         value={outfitData.title}
                         onChange={(e) => handleInputChange('title', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] placeholder-gray-700 text-gray-900"
+                        disabled={isUploading}
+                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] placeholder-gray-700 text-gray-900 ${
+                          isUploading ? 'bg-gray-100 cursor-not-allowed' : ''
+                        }`}
                         placeholder="e.g., My favorite work outfit"
                         style={{ fontFamily: 'Inter' }}
                       />
@@ -790,8 +898,11 @@ export default function HomePage() {
                         id="description"
                         value={outfitData.description}
                         onChange={(e) => handleInputChange('description', e.target.value)}
+                        disabled={isUploading}
                         rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] placeholder-gray-700 text-gray-900"
+                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] placeholder-gray-700 text-gray-900 ${
+                          isUploading ? 'bg-gray-100 cursor-not-allowed' : ''
+                        }`}
                         placeholder="Describe your outfit, materials, or style."
                         style={{ fontFamily: 'Inter' }}
                       />
@@ -805,7 +916,10 @@ export default function HomePage() {
                         id="category"
                         value={outfitData.category}
                         onChange={(e) => handleInputChange('category', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] text-gray-900"
+                        disabled={isUploading}
+                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] text-gray-900 ${
+                          isUploading ? 'bg-gray-100 cursor-not-allowed' : ''
+                        }`}
                         style={{ fontFamily: 'Inter' }}
                       >
                         {allCategories.map(cat => (
@@ -823,7 +937,10 @@ export default function HomePage() {
                         id="tags"
                         value={outfitData.tags}
                         onChange={(e) => handleInputChange('tags', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] placeholder-gray-700 text-gray-900"
+                        disabled={isUploading}
+                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] placeholder-gray-700 text-gray-900 ${
+                          isUploading ? 'bg-gray-100 cursor-not-allowed' : ''
+                        }`}
                         placeholder="e.g., blazer, jeans, boots"
                         style={{ fontFamily: 'Inter' }}
                       />
@@ -832,6 +949,22 @@ export default function HomePage() {
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Progress bar for uploads */}
+                  {isUploading && uploadProgress > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-600">Uploading...</span>
+                        <span className="text-sm text-gray-600">{uploadProgress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-[#0B2C21] h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex justify-end mt-8">
                     <button
@@ -844,7 +977,14 @@ export default function HomePage() {
                       }`}
                       style={{ fontFamily: 'Inter' }}
                     >
-                      {isUploading ? 'Saving...' : (isEditing ? 'Update Outfit' : 'Save Outfit')}
+                      {isUploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Uploading... Please wait</span>
+                        </>
+                      ) : (
+                        <span>{isEditing ? 'Update Outfit' : 'Save Outfit'}</span>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -870,6 +1010,31 @@ export default function HomePage() {
               <p className="text-gray-600" style={{ fontFamily: 'Inter' }}>
                 Your look is now live in your feed!
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Overlay - prevents user interaction during upload */}
+      {isUploading && (
+        <div className="fixed inset-0 bg-black/10 z-40 flex items-center justify-center">
+          <div className="bg-white/90 backdrop-blur-sm p-6 rounded-lg shadow-lg max-w-sm w-full mx-4">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0B2C21] mx-auto mb-4"></div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
+                Uploading Your Outfit
+              </h3>
+              <p className="text-sm text-gray-600 mb-4" style={{ fontFamily: 'Inter' }}>
+                Please don't close this window or navigate away
+              </p>
+              {uploadProgress > 0 && (
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-[#0B2C21] h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              )}
             </div>
           </div>
         </div>
