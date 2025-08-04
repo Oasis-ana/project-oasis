@@ -1,173 +1,675 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Search, Plus, X, Heart, Trash2, Edit, Camera, Upload, Home, Bell, Settings } from 'lucide-react'
+import { Search, Home, Camera, Bell, Settings, Plus, Check, X, Trash2, Shirt, Package, Crown, ShirtIcon, Star, Zap, Link } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useOutfits } from '../hooks/useOutfits'
-import { useCamera } from '../hooks/useCamera'
-import SettingsModal from '../profile/components/SettingsModal'
-import OutfitGrid from '../home/components/OutfitGrid'
-import Sidebar from '../components/shared/Sidebar'
-import { Outfit } from '../types/outfit'
+import AddItemModal from './components/AddItemModal'
+import ItemDetailsModal from './components/ItemDetailsModal'
+import CameraModal from '../components/shared/CameraModal'
+import  Sidebar  from '../components/shared/Sidebar';
+
+interface ClothingItem {
+  id: string
+  name: string
+  brand: string
+  size: string
+  color: string
+  category: string
+  image: string
+  tags: string[]
+  isFavorite: boolean
+  isWorn: boolean
+  lastWorn?: string
+  createdAt: string
+}
 
 interface User {
   username: string
-  email: string
-  first_name: string
-  last_name: string
-  bio: string
   avatar?: string
-  followers_count?: number
-  following_count?: number
 }
 
-export default function HomePage() {
-  const [searchQuery, setSearchQuery] = useState('')
+export default function ClosetPage() {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
   const [user, setUser] = useState<User | null>(null)
-  const [showSettingsModal, setShowSettingsModal] = useState(false)
-  const [showAddTabModal, setShowAddTabModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [tabToDelete, setTabToDelete] = useState('')
-  const [newTabName, setNewTabName] = useState('')
-  const [defaultTabs, setDefaultTabs] = useState<string[]>(['Work', 'Date Night'])
-  const [customTabs, setCustomTabs] = useState<string[]>([])
-  const [activeTab, setActiveTab] = useState('All Outfits')
   const [isClient, setIsClient] = useState(false)
-  
-  // Outfit creation states
-  const [showCreateOutfitModal, setShowCreateOutfitModal] = useState(false)
+  const [activeTab, setActiveTab] = useState('My Items')
+  const [activeFilter, setActiveFilter] = useState('All')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [clothingItems, setClothingItems] = useState<ClothingItem[]>([])
+  const [isLoadingItems, setIsLoadingItems] = useState(true)
+  const [addedItems, setAddedItems] = useState<Set<string>>(new Set())
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<ClothingItem | null>(null)
+  const [showAddItemModal, setShowAddItemModal] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [outfitData, setOutfitData] = useState({
-    title: '',
-    description: '',
-    category: 'Casual',
-    tags: '',
-    occasion: ''
-  })
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  
-  // Connection warmup state (REMOVED DUPLICATE)
-  const [isConnectionWarmed, setIsConnectionWarmed] = useState(false)
-  
-  // Outfit viewing states
-  const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null)
-  const [showOutfitModal, setShowOutfitModal] = useState(false)
-  
-  // Editing states
-  const [isEditing, setIsEditing] = useState(false)
-  const [editingOutfitId, setEditingOutfitId] = useState<string | null>(null)
-  
-  // Deletion states
-  const [showDeleteOutfitModal, setShowDeleteOutfitModal] = useState(false)
-  const [outfitToDelete, setOutfitToDelete] = useState<Outfit | null>(null)
-  
-  // Refs
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter()
-  const { outfits, isLoadingOutfits, fetchOutfits, handleLike, addOutfit, updateOutfit, deleteOutfit } = useOutfits()
-  const { showCamera, videoRef, canvasRef, startCamera, stopCamera, takePhoto } = useCamera()
+  const [itemData, setItemData] = useState({
+    name: '',
+    brand: '',
+    size: '',
+    color: '',
+    category: 'Tops',
+    tags: '',
+  })
 
-  // Base categories
-  const baseCategories = ['Casual', 'Work', 'Date Night', 'Formal', 'Party', 'Weekend', 'Travel', 'Sport']
+  const [showCamera, setShowCamera] = useState(false)
+  const [showCameraModal, setShowCameraModal] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null!)
+
+  const [showItemDetailsModal, setShowItemDetailsModal] = useState(false)
+  const [selectedItemForDetails, setSelectedItemForDetails] = useState<ClothingItem | null>(null)
   
-  // All categories combining base, default, and custom tabs
-  const allCategories = Array.from(new Set([...baseCategories, ...defaultTabs, ...customTabs]));
+  const [showUrlModal, setShowUrlModal] = useState(false)
+  const [selectedCatalogItem, setSelectedCatalogItem] = useState<any>(null)
+  const [urlReference, setUrlReference] = useState('')
+  const [catalogItemData, setCatalogItemData] = useState({
+    brand: '',
+    size: '',
+    color: '',
+    tags: ''
+  })
+  
+  const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({})
 
-  // Warm up the connection on first load
-  useEffect(() => {
-    if (isClient && !isConnectionWarmed) {
-      warmUpConnection()
-    }
-  }, [isClient, isConnectionWarmed])
-
-  const warmUpConnection = async () => {
-    try {
-      // Make a quick API call to warm up the connection
-      const token = localStorage.getItem('authToken')
-      if (!token) return
-
-      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
-      
-      await fetch(`${API_URL}/api/auth/profile/`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      setIsConnectionWarmed(true)
-      console.log('Connection warmed up successfully')
-    } catch (error) {
-      console.log('Connection warmup failed, but continuing:', error)
-      setIsConnectionWarmed(true) // Set to true anyway
-    }
+  const handleImageLoad = (itemId: string) => {
+    setImageLoadingStates(prev => ({ ...prev, [itemId]: false }))
   }
 
-  // Load cached data
+  const handleImageError = (itemId: string) => {
+    setImageLoadingStates(prev => ({ ...prev, [itemId]: false }))
+  }
+
+  const handleImageStart = (itemId: string) => {
+    setImageLoadingStates(prev => ({ ...prev, [itemId]: true }))
+  }
+
+  const isUrlImage = (imageUrl: string) => {
+    if (!imageUrl) return false
+    
+   
+    const isMediaStorageImage =
+      imageUrl.includes('.amazonaws.com') ||
+      imageUrl.includes('cloudfront.net') ||
+      imageUrl.startsWith('/media/') ||
+      imageUrl.includes('storage.googleapis') ||
+      (API_BASE_URL && imageUrl.startsWith(API_BASE_URL)) || 
+      !imageUrl.startsWith('http');
+    
+    return imageUrl.startsWith('http') && !isMediaStorageImage
+  }
+
+  const shouldUseCors = (imageUrl: string) => {
+    return isUrlImage(imageUrl)
+  }
+
+  const getProxiedImageUrl = (originalUrl: string) => {
+    if (!isUrlImage(originalUrl)) {
+      return originalUrl 
+    }
+    
+    return originalUrl
+  }
+
+  const validateImageUrl = async (url: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve(true)
+      img.onerror = () => resolve(false)
+      img.src = url
+      
+      setTimeout(() => resolve(false), 5000)
+    })
+  }
+  
+  const router = useRouter()
+
   useEffect(() => {
     setIsClient(true)
     const cached = localStorage.getItem('userProfile')
     if (cached) {
       try {
         setUser(JSON.parse(cached))
-      } catch (e) {
+      }
+      catch (e) {
         console.error('Error parsing cached user data:', e)
       }
     }
 
-    const savedTabs = localStorage.getItem('customTabs')
-    if (savedTabs) {
-      try {
-        setCustomTabs(JSON.parse(savedTabs))
-      } catch (e) {
-        console.error('Error parsing custom tabs:', e)
-      }
-    }
-
-    const savedDefaultTabs = localStorage.getItem('defaultTabs')
-    if (savedDefaultTabs) {
-      try {
-        setDefaultTabs(JSON.parse(savedDefaultTabs))
-      } catch (e) {
-        console.error('Error parsing default tabs:', e)
-      }
-    }
-
-    const pendingImage = localStorage.getItem('pendingOutfitImage')
+    const pendingImage = localStorage.getItem('pendingItemImage')
     if (pendingImage) {
       setSelectedImage(pendingImage)
-      setShowCreateOutfitModal(true)
-      localStorage.removeItem('pendingOutfitImage')
+      setShowAddItemModal(true)
+      localStorage.removeItem('pendingItemImage')
     }
 
-    const shouldCreateOutfit = localStorage.getItem('shouldCreateOutfit')
-    if (shouldCreateOutfit) {
-      setShowCreateOutfitModal(true)
-      localStorage.removeItem('shouldCreateOutfit')
+    const shouldCreateItem = localStorage.getItem('shouldCreateItem')
+    if (shouldCreateItem) {
+      setShowAddItemModal(true)
+      localStorage.removeItem('shouldCreateItem')
     }
   }, [])
 
   useEffect(() => {
-    if (isClient) {
-      fetchUserProfile()
-    }
-  }, [isClient])
+    const fetchClothingItems = async () => {
+      const token = localStorage.getItem('authToken')
+      if (!token) {
+        setIsLoadingItems(false)
+        return
+      }
 
-  const fetchUserProfile = async () => {
+      try {
+        setIsLoadingItems(true)
+        const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (response.ok) {
+          const itemsData = await response.json()
+          const transformedItems = itemsData.map((item: any) => ({
+            id: item.id.toString(),
+            name: item.name,
+            brand: item.brand || 'Unknown',
+            size: item.size || 'Unknown',
+            color: item.color || 'Unknown',
+            category: item.category || 'Other',
+            image: item.image || item.image_url || '',
+            tags: item.tags || [],
+            isFavorite: item.is_favorite || false,
+            isWorn: item.is_worn || false,
+            lastWorn: item.last_worn,
+            createdAt: item.created_at
+          }))
+          setClothingItems(transformedItems)
+        }
+        else {
+          console.error('Failed to fetch clothing items')
+        }
+      }
+      catch (error) {
+        console.error('Error fetching clothing items:', error)
+      }
+      finally {
+        setIsLoadingItems(false)
+      }
+    }
+
+    if (isClient) {
+      fetchClothingItems()
+    }
+  }, [isClient, API_BASE_URL])
+
+  const tabs = ['My Items', 'Browse Catalog']
+  const filters = ['All', 'Tops', 'Bottoms', 'Dresses', 'Outerwear', 'Shoes', 'Accessories', 'Never Worn', 'Favorites', 'Recently Added']
+
+  const totalItems = clothingItems.length
+  const recentlyWorn = clothingItems.filter(item => {
+    if (!item.lastWorn) return false
+    const lastWornDate = new Date(item.lastWorn)
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    return lastWornDate > thirtyDaysAgo
+  }).length
+  const neverWorn = clothingItems.filter(item => !item.isWorn).length
+  const favorites = clothingItems.filter(item => item.isFavorite).length
+
+  const filteredItems = clothingItems.filter(item => {
+    const matchesFilter =
+      activeFilter === 'All' ||
+      item.category === activeFilter ||
+      (activeFilter === 'Never Worn' && !item.isWorn) ||
+      (activeFilter === 'Favorites' && item.isFavorite) ||
+      (activeFilter === 'Recently Added' && true)
+
+    const matchesSearch =
+      searchQuery === '' ||
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+
+    return matchesFilter && matchesSearch
+  })
+
+  const getCategoryIcon = (category: string) => {
+    const iconClass = "w-16 h-16 text-gray-300"
+    switch (category) {
+      case 'Tops':
+        return <Shirt className={iconClass} />
+      case 'Bottoms':
+        return <Package className={iconClass} />
+      case 'Dresses':
+        return <Crown className={iconClass} />
+      case 'Outerwear':
+        return <ShirtIcon className={iconClass} />
+      case 'Shoes':
+        return <Star className={iconClass} />
+      case 'Accessories':
+        return <Zap className={iconClass} />
+      default:
+        return <Package className={iconClass} />
+    }
+  }
+
+  const getCategoryLabel = (category: string) => {
+    const labels = {
+      Dresses: 'DRESS',
+      Bottoms: 'BOTTOMS',
+      Tops: 'TOP',
+      Outerwear: 'OUTERWEAR',
+      Shoes: 'SHOES',
+      Accessories: 'ACCESSORY'
+    }
+    return labels[category as keyof typeof labels] || category.toUpperCase()
+  }
+
+  const getCatalogItems = () => [
+    { 
+      id: 'c1', 
+      name: 'White Button-Down Shirt', 
+      category: 'Tops', 
+      description: 'Classic collared button-up', 
+      commonBrands: ['Uniqlo', 'J.Crew']
+    },
+    { 
+      id: 'c2', 
+      name: 'Black T-Shirt', 
+      category: 'Tops', 
+      description: 'Basic crew neck tee', 
+      commonBrands: ['Hanes', 'Uniqlo']
+    },
+    { 
+      id: 'c3', 
+      name: 'White T-Shirt', 
+      category: 'Tops', 
+      description: 'Basic white tee', 
+      commonBrands: ['Hanes', 'Uniqlo']
+    },
+    { 
+      id: 'c4', 
+      name: 'Striped Long-Sleeve', 
+      category: 'Tops', 
+      description: 'Navy/white stripes', 
+      commonBrands: ['J.Crew', 'Madewell']
+    },
+    { 
+      id: 'c5', 
+      name: 'Cashmere Sweater', 
+      category: 'Tops', 
+      description: 'Soft pullover sweater', 
+      commonBrands: ['Uniqlo', 'Everlane']
+    },
+    { 
+      id: 'c6', 
+      name: 'Cardigan', 
+      category: 'Tops', 
+      description: 'Button-up sweater', 
+      commonBrands: ['J.Crew', 'Madewell']
+    },
+    { 
+      id: 'c7', 
+      name: 'Dark Wash Jeans', 
+      category: 'Bottoms', 
+      description: 'Classic blue denim', 
+      commonBrands: ['Levi\'s', 'Madewell']
+    },
+    { 
+      id: 'c8', 
+      name: 'Light Wash Jeans', 
+      category: 'Bottoms', 
+      description: 'Faded blue denim', 
+      commonBrands: ['Levi\'s', 'American Eagle']
+    },
+    { 
+      id: 'c9', 
+      name: 'Black Pants', 
+      category: 'Bottoms', 
+      description: 'Dress pants or slacks', 
+      commonBrands: ['Banana Republic', 'Ann Taylor']
+    },
+    { 
+      id: 'c10', 
+      name: 'Leggings', 
+      category: 'Bottoms', 
+      description: 'Stretch athletic pants', 
+      commonBrands: ['Lululemon', 'Athleta']
+    },
+    { 
+      id: 'c11', 
+      name: 'Little Black Dress', 
+      category: 'Dresses', 
+      description: 'Classic cocktail dress', 
+      commonBrands: ['Zara', 'Banana Republic']
+    },
+    { 
+      id: 'c12', 
+      name: 'Wrap Dress', 
+      category: 'Dresses', 
+      description: 'Flattering wrap-style', 
+      commonBrands: ['DVF', 'J.Crew']
+    },
+    { 
+      id: 'c13', 
+      name: 'Maxi Dress', 
+      category: 'Dresses', 
+      description: 'Long flowing dress', 
+      commonBrands: ['Free People', 'Anthropologie']
+    },
+    { 
+      id: 'c14', 
+      name: 'Denim Jacket', 
+      category: 'Outerwear', 
+      description: 'Classic jean jacket', 
+      commonBrands: ['Levi\'s', 'Madewell']
+    },
+    { 
+      id: 'c15', 
+      name: 'Black Blazer', 
+      category: 'Outerwear', 
+      description: 'Professional jacket', 
+      commonBrands: ['Zara', 'Banana Republic']
+    },
+    { 
+      id: 'c16', 
+      name: 'Leather Jacket', 
+      category: 'Outerwear', 
+      description: 'Edgy moto jacket', 
+      commonBrands: ['AllSaints', 'Madewell']
+    },
+    { 
+      id: 'c17', 
+      name: 'White Sneakers', 
+      category: 'Shoes', 
+      description: 'Classic tennis shoes', 
+      commonBrands: ['Adidas', 'Nike']
+    },
+    { 
+      id: 'c18', 
+      name: 'Black Heels', 
+      category: 'Shoes', 
+      description: 'Professional pumps', 
+      commonBrands: ['Cole Haan', 'Nine West']
+    },
+    { 
+      id: 'c19', 
+      name: 'Ballet Flats', 
+      category: 'Shoes', 
+      description: 'Comfortable flat shoes', 
+      commonBrands: ['Tory Burch', 'Cole Haan']
+    },
+    { 
+      id: 'c20', 
+      name: 'Black Belt', 
+      category: 'Accessories', 
+      description: 'Classic leather belt', 
+      commonBrands: ['Coach', 'Kate Spade']
+    },
+    { 
+      id: 'c21', 
+      name: 'Watch', 
+      category: 'Accessories', 
+      description: 'Classic timepiece', 
+      commonBrands: ['Apple', 'Michael Kors']
+    },
+    { 
+      id: 'c22', 
+      name: 'Sunglasses', 
+      category: 'Accessories', 
+      description: 'UV protection eyewear', 
+      commonBrands: ['Ray-Ban', 'Oakley']
+    }
+  ]
+
+  const handleAddCatalogItem = async (catalogItem: any) => {
     const token = localStorage.getItem('authToken')
     if (!token) {
-      router.push('/login')
+      console.error('No auth token found')
       return
     }
 
-    const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+    setAddedItems(prev => new Set([...prev, catalogItem.id]))
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/profile/`, {
-        method: 'GET',
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: catalogItem.name,
+          brand: catalogItem.commonBrands[0],
+          size: 'M',
+          color: 'Various',
+          category: catalogItem.category,
+          tags: ['wardrobe-essential'],
+          is_favorite: false,
+          is_worn: false,
+        })
+      })
+
+      if (response.ok) {
+        const newItemData = await response.json()
+        
+        const newItem: ClothingItem = {
+          id: newItemData.id.toString(),
+          name: newItemData.name,
+          brand: newItemData.brand,
+          size: newItemData.size,
+          color: newItemData.color,
+          category: newItemData.category,
+          image: newItemData.image || '',
+          tags: newItemData.tags || [],
+          isFavorite: newItemData.is_favorite || false,
+          isWorn: newItemData.is_worn || false,
+          lastWorn: newItemData.last_worn,
+          createdAt: newItemData.created_at
+        }
+
+        setClothingItems(prev => [...prev, newItem])
+        console.log('✅ Item added successfully:', newItem.name)
+      }
+      else {
+        console.error('❌ Failed to add item to backend')
+        setAddedItems(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(catalogItem.id)
+          return newSet
+        })
+      }
+    }
+    catch (error) {
+      console.error('❌ Error adding catalog item:', error)
+      setAddedItems(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(catalogItem.id)
+        return newSet
+      })
+    }
+
+    setTimeout(() => {
+      setAddedItems(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(catalogItem.id)
+        return newSet
+      })
+    }, 3000)
+  }
+
+  const handleAddWithUrl = (catalogItem: any) => {
+    setSelectedCatalogItem(catalogItem)
+    setCatalogItemData({
+      brand: catalogItem.commonBrands[0] || '',
+      size: 'M',
+      color: 'Various',
+      tags: 'wardrobe-essential'
+    })
+    setUrlReference('')
+    setShowUrlModal(true)
+  }
+
+  const handleSaveUrlReference = async () => {
+    if (!selectedCatalogItem) return
+
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      alert('Please log in to add items')
+      return
+    }
+
+    if (urlReference.trim()) {
+      const isValidUrl = await validateImageUrl(urlReference)
+      if (!isValidUrl) {
+        const proceed = confirm('The image URL appears to be invalid or unreachable. Do you want to continue anyway?')
+        if (!proceed) return
+      }
+    }
+
+    setIsUploading(true)
+
+    try {
+      const imageToSave = urlReference.trim() || ''
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: selectedCatalogItem.name,
+          brand: catalogItemData.brand,
+          size: catalogItemData.size,
+          color: catalogItemData.color,
+          category: selectedCatalogItem.category,
+          tags: catalogItemData.tags.split(',').map(tag => tag.trim()),
+          is_favorite: false,
+          is_worn: false,
+          image_url: imageToSave,
+        })
+      })
+
+      if (response.ok) {
+        const newItemData = await response.json()
+        
+        const newItem: ClothingItem = {
+          id: newItemData.id.toString(),
+          name: newItemData.name,
+          brand: newItemData.brand,
+          size: newItemData.size,
+          color: newItemData.color,
+          category: newItemData.category,
+          image: newItemData.image || '',
+          tags: newItemData.tags || [],
+          isFavorite: newItemData.is_favorite || false,
+          isWorn: newItemData.is_worn || false,
+          lastWorn: newItemData.last_worn,
+          createdAt: newItemData.created_at
+        }
+
+        setClothingItems(prev => [...prev, newItem])
+        console.log('✅ Item with URL reference added successfully!')
+        
+        setAddedItems(prev => new Set([...prev, selectedCatalogItem.id]))
+        setTimeout(() => {
+          setAddedItems(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(selectedCatalogItem.id)
+            return newSet
+          })
+        }, 3000)
+        
+        setShowUrlModal(false)
+        setSelectedCatalogItem(null)
+        setUrlReference('')
+        setCatalogItemData({ brand: '', size: '', color: '', tags: '' })
+      }
+      else {
+        console.error('❌ Failed to add item')
+        alert('Failed to add item. Please try again.')
+      }
+    }
+    catch (error) {
+      console.error('❌ Error adding item:', error)
+      alert('Error adding item. Please check your connection and try again.')
+    }
+    finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleToggleFavorite = async (item: ClothingItem) => {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      alert('Please log in to favorite items')
+      return
+    }
+
+    const newFavoriteStatus = !item.isFavorite
+
+    const updatedItems = clothingItems.map(clothingItem =>
+      clothingItem.id === item.id
+        ? { ...clothingItem, isFavorite: newFavoriteStatus }
+        : clothingItem
+    )
+    setClothingItems(updatedItems)
+
+    if (selectedItemForDetails && selectedItemForDetails.id === item.id) {
+      setSelectedItemForDetails({ ...selectedItemForDetails, isFavorite: newFavoriteStatus })
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${item.id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          is_favorite: newFavoriteStatus
+        })
+      })
+
+      if (!response.ok) {
+        setClothingItems(clothingItems)
+        if (selectedItemForDetails && selectedItemForDetails.id === item.id) {
+          setSelectedItemForDetails(item.id === selectedItemForDetails.id ? { ...selectedItemForDetails, isFavorite: !selectedItemForDetails.isFavorite } : selectedItemForDetails);
+        }
+        alert('Failed to update favorite status. Please try again.');
+      }
+    }
+    catch (error) {
+      console.error('Error toggling favorite:', error)
+      setClothingItems(clothingItems)
+      if (selectedItemForDetails && selectedItemForDetails.id === item.id) {
+        setSelectedItemForDetails(item.id === selectedItemForDetails.id ? { ...selectedItemForDetails, isFavorite: !selectedItemForDetails.isFavorite } : selectedItemForDetails);
+      }
+      alert('Network error. Please check your connection.');
+    }
+  }
+
+  const handleDeleteItem = (item: ClothingItem) => {
+    setItemToDelete(item)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDeleteItem = async () => {
+    if (!itemToDelete) return
+
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      console.error('No auth token found')
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${itemToDelete.id}/`, {
+        method: 'DELETE',
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
@@ -175,112 +677,45 @@ export default function HomePage() {
       })
 
       if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-        localStorage.setItem('userProfile', JSON.stringify(userData))
-      } else if (response.status === 401) {
-        localStorage.removeItem('authToken')
-        router.push('/login')
+        setClothingItems(prev => prev.filter(item => item.id !== itemToDelete.id))
+        console.log('✅ Item deleted successfully:', itemToDelete.name)
       }
-    } catch (error) {
-      console.error('Network error:', error)
+      else {
+        console.error('❌ Failed to delete item from backend')
+      }
     }
-  }
-
-  const updateUserData = (updatedData: Partial<User>) => {
-    setUser(prevUser => {
-      if (!prevUser) return null
-      const newUser = { ...prevUser, ...updatedData }
-      localStorage.setItem('userProfile', JSON.stringify(newUser))
-      return newUser
-    })
-  }
-
-  // Tab configuration
-  const tabs = ['All Outfits', 'Favorites', ...defaultTabs, ...customTabs, '+ Add Tab']
-  
-  // Filter outfits by active tab
-  const tabFilteredOutfits = activeTab === 'All Outfits' 
-    ? outfits 
-    : activeTab === 'Favorites'
-    ? outfits.filter(outfit => outfit.liked)
-    : outfits.filter(outfit => outfit.category === activeTab);
-
-  // Filter by search query
-  const filteredOutfits = tabFilteredOutfits.filter(outfit => {
-    if (searchQuery === '') {
-      return true; 
-    }
-
-    const query = searchQuery.toLowerCase();
-    const title = outfit.title.toLowerCase();
-    const description = outfit.description?.toLowerCase() || '';
-    const tags = outfit.tags?.map(tag => tag.toLowerCase()).join(' ') || '';
-
-    return (
-      title.includes(query) ||
-      description.includes(query) ||
-      tags.includes(query)
-    );
-  });
-
-  const handleTabClick = (tab: string) => {
-    if (tab === '+ Add Tab') {
-      setShowAddTabModal(true)
-    } else {
-      setActiveTab(tab)
-    }
-  }
-
-  const handleCreateTab = async () => {
-    if (!newTabName.trim()) return
-
-    const tabName = newTabName.trim()
-    
-    if (['All Outfits', 'Favorites', ...defaultTabs, ...customTabs].includes(tabName)) {
-      alert('This tab already exists!')
-      return
-    }
-
-    const newCustomTabs = [...customTabs, tabName]
-    setCustomTabs(newCustomTabs)
-    localStorage.setItem('customTabs', JSON.stringify(newCustomTabs))
-    
-    setShowAddTabModal(false)
-    setNewTabName('')
-    setActiveTab(tabName)
-  }
-
-  const handleDeleteTab = (tabToDelete: string) => {
-    if (tabToDelete === 'All Outfits' || tabToDelete === 'Favorites') return
-    setTabToDelete(tabToDelete)
-    setShowDeleteModal(true)
-  }
-
-  const confirmDeleteTab = () => {
-    if (defaultTabs.includes(tabToDelete)) {
-      const updatedDefaultTabs = defaultTabs.filter(tab => tab !== tabToDelete)
-      setDefaultTabs(updatedDefaultTabs)
-      localStorage.setItem('defaultTabs', JSON.stringify(updatedDefaultTabs))
-    } else {
-      const updatedCustomTabs = customTabs.filter(tab => tab !== tabToDelete)
-      setCustomTabs(updatedCustomTabs)
-      localStorage.setItem('customTabs', JSON.stringify(updatedCustomTabs))
-    }
-    
-    if (activeTab === tabToDelete) {
-      setActiveTab('All Outfits')
+    catch (error) {
+      console.error('❌ Error deleting item:', error)
     }
 
     setShowDeleteModal(false)
-    setTabToDelete('')
+    setItemToDelete(null)
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false)
+    setItemToDelete(null)
+  }
+
+  const handlePhotoTakenFromSidebar = (imageData: string) => {
+    setSelectedImage(imageData)
+    setShowAddItemModal(true)
+  }
+
+  const handleCameraClickFromSidebar = () => {
+    setShowAddItemModal(true)
+  }
+
+  const handlePhotoTakenFromModal = (imageData: string) => {
+    setSelectedImage(imageData)
+    setShowCameraModal(false)
   }
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        alert('Image size must be less than 10MB')
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB')
         return
       }
       
@@ -292,323 +727,227 @@ export default function HomePage() {
     }
   }
 
-  const handleTakePhoto = () => {
-    const imageData = takePhoto()
-    if (imageData) {
-      setSelectedImage(imageData)
-    }
-  }
-  
-  const handleLogTodaysLook = () => {
-    resetOutfitForm()
-    setShowCreateOutfitModal(true)
-    if (activeTab !== 'All Outfits') {
-      setOutfitData(prev => ({
-        ...prev,
-        category: activeTab
-      }))
-    } else {
-      setOutfitData(prev => ({
-        ...prev,
-        category: baseCategories[0]
-      }))
-    }
-  }
-  
-  const handleEditOutfit = (outfit: Outfit) => {
-    setIsEditing(true)
-    setEditingOutfitId(outfit.id)
-    setSelectedImage(outfit.image)
-    setOutfitData({
-      title: outfit.title,
-      description: outfit.description || '',
-      category: outfit.category,
-      tags: outfit.tags ? outfit.tags.join(', ') : '',
-      occasion: outfit.occasion || ''
-    })
-    setShowCreateOutfitModal(true)
-    setShowOutfitModal(false)
-  }
-
   const handleInputChange = (field: string, value: string) => {
-    setOutfitData(prev => ({
+    setItemData(prev => ({
       ...prev,
       [field]: value
     }))
   }
 
-  const handleOutfitClick = (outfit: Outfit) => {
-    setSelectedOutfit(outfit)
-    setShowOutfitModal(true)
-  }
-
-  const closeOutfitModal = () => {
-    setSelectedOutfit(null)
-    setShowOutfitModal(false)
-  }
-
   const validateForm = () => {
     if (!selectedImage) {
-      alert('Please add a photo of your outfit')
+      alert('Please add a photo of your item')
       return false
     }
-    if (!outfitData.title.trim()) {
-      alert('Please enter an outfit title')
+    if (!itemData.name.trim()) {
+      alert('Please enter an item name')
       return false
     }
     return true
   }
 
-  const handleCloseSuccessModal = () => {
-    setSuccessMessage(null);
-  }
-
-  const handleSuccess = (message: string) => {
-    setShowCreateOutfitModal(false);
-    setSuccessMessage('Outfit Posted! 🎉');
-    resetOutfitForm(); 
-    setTimeout(() => {
-      handleCloseSuccessModal();
-    }, 2000);
-  }
-
-  const handleCloseCreateModal = () => {
-    setShowCreateOutfitModal(false)
-    resetOutfitForm()
-  }
-
-  // Force refresh outfits list and update state
-  const forceRefreshOutfits = async () => {
-    try {
-      console.log('Force refreshing outfits...')
-      await fetchOutfits()
-      await new Promise(resolve => setTimeout(resolve, 500))
-      return true
-    } catch (error) {
-      console.error('Error force refreshing outfits:', error)
-      return false
-    }
-  }
-
-  // Improved verification function to check if upload actually succeeded
-  const verifyUploadSuccess = async () => {
-    try {
-      console.log('Verifying upload success...')
-      
-      const outfitTitle = outfitData.title
-      const previousOutfitCount = outfits.length
-      
-      // Try to refresh and verify multiple times
-      const maxAttempts = 3
-      
-      for (let i = 0; i < maxAttempts; i++) {
-        console.log(`Verification attempt ${i + 1}/${maxAttempts}`)
-        
-        // Wait before checking (longer wait on first attempt)
-        await new Promise(resolve => setTimeout(resolve, i === 0 ? 3000 : 2000))
-        
-        // Force refresh the outfits
-        const refreshSuccess = await forceRefreshOutfits()
-        
-        if (!refreshSuccess) {
-          console.log('Failed to refresh outfits, continuing to next attempt')
-          continue
-        }
-        
-        // Check if we can find the uploaded outfit
-        const currentOutfits = outfits
-        
-        // Method 1: Check outfit count increase (for new uploads)
-        if (!isEditing && currentOutfits.length > previousOutfitCount) {
-          console.log('SUCCESS: Outfit count increased!')
-          handleSuccess('Outfit saved!')
-          return
-        }
-        
-        // Method 2: Look for outfit with exact title match
-        const matchingOutfits = currentOutfits.filter(outfit => 
-          outfit.title.toLowerCase().trim() === outfitTitle.toLowerCase().trim()
-        )
-        
-        if (matchingOutfits.length > 0) {
-          console.log('SUCCESS: Found outfit with matching title!')
-          handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
-          return
-        }
-        
-        // Method 3: Check if any outfit was created very recently (last 5 minutes)
-        const veryRecentOutfits = currentOutfits.filter(outfit => {
-          const timeDiff = Date.now() - new Date(outfit.created_at).getTime()
-          return timeDiff < 5 * 60 * 1000 // Within last 5 minutes
-        })
-        
-        if (veryRecentOutfits.length > 0 && i === maxAttempts - 1) {
-          console.log('Found recent outfit on final attempt - assuming success')
-          handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
-          return
-        }
-      }
-      
-      // If we get here, we couldn't verify but upload might have worked
-      console.log('Verification inconclusive - treating as potential success')
-      
-      // Close modal and show success (most uploads actually work)
-      handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
-      
-      // Also suggest a manual refresh
-      setTimeout(() => {
-        if (confirm('Want to refresh the page to make sure your outfit appears?')) {
-          window.location.reload()
-        }
-      }, 3000)
-      
-    } catch (error) {
-      console.error('Error during verification:', error)
-      
-      // Assume success and close modal
-      handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
-      
-      // Suggest refresh
-      setTimeout(() => {
-        alert('Please refresh the page to see your outfit')
-      }, 2000)
-    } finally {
-      setIsUploading(false)
-      setUploadProgress(0)
-    }
-  }
-
-  // Better upload handling with verification
-  const handleSaveOrUpdateOutfit = async () => {
+  const handleSaveItem = async () => {
     if (!validateForm()) return
 
-    // Prevent multiple uploads
-    if (isUploading) {
-      console.log('Upload already in progress, ignoring duplicate request')
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      alert('Please log in to add items')
       return
     }
 
     setIsUploading(true)
-    setUploadProgress(0)
-    
-    const formData = new FormData()
-    formData.append('title', outfitData.title)
-    
-    if (outfitData.description) {
-      formData.append('description', outfitData.description)
-    }
-    
-    formData.append('category', outfitData.category)
-    
-    const tagsArray = outfitData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
-    tagsArray.forEach(tag => {
-      formData.append('tags', tag)
-    })
-    
-    if (outfitData.occasion) {
-      formData.append('occasion', outfitData.occasion)
-    }
-    
-    if (selectedImage && selectedImage.startsWith('data:')) {
-      const base64Response = await fetch(selectedImage)
-      const blob = await base64Response.blob()
-      formData.append('image', blob, 'outfit.jpg')
-    }
 
     try {
-      let success = false
-      let result = null
+      const base64Response = await fetch(selectedImage!)
+      const blob = await base64Response.blob()
       
-      // Simulate progress for better UX
-      setUploadProgress(25)
-      
-      if (isEditing && editingOutfitId) {
-        setUploadProgress(50)
-        result = await updateOutfit(editingOutfitId, formData)
-        success = !!result
-      } else {
-        setUploadProgress(50)
-        result = await addOutfit(formData)
-        success = !!result
-      }
-      
-      setUploadProgress(75)
-      
-      if (success) {
-        setUploadProgress(100)
-        const message = isEditing ? 'Outfit updated!' : 'Outfit saved!';
-        handleSuccess(message);
-      } else {
-        // Even if the response indicates failure, check if it actually succeeded
-        console.log('Upload response indicated failure, verifying...')
-        await verifyUploadSuccess()
-      }
-    } catch (error: any) {
-      console.error('Error saving outfit:', error)
-      
-      // If it's a timeout error or network error, check if the upload actually succeeded
-      if (error?.code === 'ECONNABORTED' || 
-          error?.message?.includes('timeout') || 
-          error?.message?.includes('Network Error') ||
-          error?.name === 'AxiosError') {
-        console.log('Upload timed out or had network issues, checking if it actually succeeded...')
+      const formData = new FormData()
+      formData.append('name', itemData.name)
+      formData.append('brand', itemData.brand || 'Unknown')
+      formData.append('size', itemData.size || 'Unknown')
+      formData.append('color', itemData.color || 'Unknown')
+      formData.append('category', itemData.category)
+      formData.append('tags', JSON.stringify(itemData.tags ? itemData.tags.split(',').map(tag => tag.trim()) : []))
+      formData.append('is_favorite', 'false')
+      formData.append('is_worn', 'false')
+      formData.append('image', blob, 'clothing-item.jpg')
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+        },
+        body: formData
+      })
+
+      if (response.ok) {
+        const newItemData = await response.json()
         
-        // Wait a moment for the server to process, then verify
-        setTimeout(() => {
-          verifyUploadSuccess()
-        }, 3000) // Wait 3 seconds then check
-      } else {
-        alert('Error saving outfit. Please check your connection and try again.')
-        setIsUploading(false)
-        setUploadProgress(0)
+        const newItem: ClothingItem = {
+          id: newItemData.id.toString(),
+          name: newItemData.name,
+          brand: newItemData.brand,
+          size: newItemData.size,
+          color: newItemData.color,
+          category: newItemData.category,
+          image: newItemData.image || '',
+          tags: newItemData.tags || [],
+          isFavorite: newItemData.is_favorite || false,
+          isWorn: newItemData.is_worn || false,
+          lastWorn: newItemData.last_worn,
+          createdAt: newItemData.created_at
+        }
+
+        setClothingItems(prev => [...prev, newItem])
+        console.log('✅ Item added successfully!')
+        
+        resetForm()
+      }
+      else {
+        console.error('❌ Failed to add item')
+        alert('Failed to add item. Please try again.')
       }
     }
-  }
-
-  const handleDeleteOutfit = (outfit: Outfit) => {
-    setOutfitToDelete(outfit)
-    setShowDeleteOutfitModal(true)
-  }
-
-  const confirmDeleteOutfit = async () => {
-    if (!outfitToDelete) return
-
-    const success = await deleteOutfit(outfitToDelete.id)
-
-    if (success) {
-      setShowDeleteOutfitModal(false)
-      closeOutfitModal()
-    } else {
-      alert('Failed to delete outfit. Please try again.')
+    catch (error) {
+      console.error('❌ Error adding item:', error)
+      alert('Error adding item. Please check your connection and try again.')
+    }
+    finally {
+      setIsUploading(false)
     }
   }
 
-  const resetOutfitForm = () => {
-    setIsEditing(false)
-    setEditingOutfitId(null)
+  const resetForm = () => {
     setSelectedImage(null)
-    setUploadProgress(0)
-    setOutfitData({
-      title: '',
-      description: '',
-      category: 'Casual',
+    setItemData({
+      name: '',
+      brand: '',
+      size: '',
+      color: '',
+      category: 'Tops',
       tags: '',
-      occasion: ''
     })
+    setShowAddItemModal(false)
+    setShowCamera(false)
   }
 
-  const formatTimePosted = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInMs = now.getTime() - date.getTime()
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
-    
-    if (diffInDays === 0) return 'Today'
-    if (diffInDays === 1) return '1 day ago'
-    if (diffInDays < 7) return `${diffInDays} days ago`
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
-    return `${Math.floor(diffInDays / 30)} months ago`
+  const openAddItemModal = () => {
+    setShowAddItemModal(true)
   }
+
+  const getCatalogFilteredItems = () => {
+    const catalogItems = getCatalogItems()
+    if (activeFilter === 'All') return catalogItems
+    return catalogItems.filter(item => item.category === activeFilter)
+  }
+
+  const handleOpenItemDetails = (item: ClothingItem) => {
+    console.log("Attempting to open modal for item:", item.name);
+    setSelectedItemForDetails(item);
+    setShowItemDetailsModal(true);
+  }
+
+  const handleCloseItemDetails = () => {
+    setShowItemDetailsModal(false);
+    setSelectedItemForDetails(null);
+  }
+
+  const handleToggleWear = async (itemToUpdate: ClothingItem) => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      alert('Please log in to update items.');
+      return;
+    }
+
+    const newIsWornStatus = !itemToUpdate.isWorn;
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('fr-CA');
+
+    const updatedItems = clothingItems.map(item =>
+      item.id === itemToUpdate.id
+        ? { ...item, isWorn: newIsWornStatus, lastWorn: newIsWornStatus ? formattedDate : item.lastWorn }
+        : item
+    );
+    setClothingItems(updatedItems);
+    setSelectedItemForDetails(updatedItems.find(item => item.id === itemToUpdate.id) || null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${itemToUpdate.id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          is_worn: newIsWornStatus,
+          last_worn: newIsWornStatus ? formattedDate : itemToUpdate.lastWorn,
+        })
+      });
+
+      if (!response.ok) {
+        setClothingItems(clothingItems);
+        setSelectedItemForDetails(itemToUpdate);
+        alert('Failed to save wear status. Please try again.');
+      }
+    }
+    catch (error) {
+      console.error('Error toggling wear status:', error);
+      setClothingItems(clothingItems);
+      setSelectedItemForDetails(itemToUpdate);
+      alert('Network error. Please check your connection.');
+    }
+  };
+
+  const handleUpdateItem = async (updatedItem: ClothingItem) => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      alert('Please log in to update items.');
+      return;
+    }
+    
+    const updatedItems = clothingItems.map(item =>
+      item.id === updatedItem.id ? updatedItem : item
+    );
+    setClothingItems(updatedItems);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${updatedItem.id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: updatedItem.name,
+          brand: updatedItem.brand,
+          size: updatedItem.size,
+          color: updatedItem.color,
+          category: updatedItem.category,
+          tags: updatedItem.tags,
+          is_favorite: updatedItem.isFavorite,
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to update item on backend');
+        setClothingItems(clothingItems);
+        alert('Failed to update item. Please try again.');
+      }
+      else {
+        const responseData = await response.json();
+        const newUpdatedItem = {
+          ...updatedItem,
+          tags: responseData.tags
+        };
+        setSelectedItemForDetails(newUpdatedItem);
+      }
+    }
+    catch (error) {
+      console.error('Error updating item:', error);
+      setClothingItems(clothingItems);
+      alert('Network error. Please check your connection.');
+    }
+  };
 
   if (!isClient) {
     return (
@@ -620,646 +959,540 @@ export default function HomePage() {
   }
 
   return (
-    <>
-      <div className={`min-h-screen bg-[#F5F3EC] flex transition-all duration-200 ${showSettingsModal || showAddTabModal || showCreateOutfitModal || showOutfitModal || showDeleteModal || showDeleteOutfitModal || showCamera || successMessage ? 'blur-sm' : ''}`}>
-        
-        <Sidebar 
-          user={user} 
-          onShowSettings={() => setShowSettingsModal(true)}
-        />
+    <div className="min-h-screen bg-[#F5F3EC] flex">
+      {/* Sidebar  */}
+      <Sidebar 
+        user={user} 
+        onShowSettings={() => {}}
+      />
 
-        {/* Main Content */}
-        <div className="flex-1 ml-20">
-          <div className="flex items-center justify-between p-6">
-            <div className="flex items-center">
-              <h1 style={{ 
+      <div className="flex-1 ml-20">
+        <div className="flex items-center justify-between p-6">
+          <div className="relative">
+            <h1
+              style={{
                 fontFamily: 'Playfair Display, serif',
                 textShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)',
                 fontSize: '2.25rem',
                 fontWeight: 'bold',
                 color: '#0B2C21',
-                letterSpacing: '0.025em'
-              }}>
-                <span style={{ position: 'relative', display: 'inline-block' }}>
-                  O
-                  <img
-                    src="/hanger-logo-new.png"
-                    alt="Hanger"
-                    style={{
-                      position: 'absolute',
-                      width: '36px',
-                      height: '36px',
-                      top: '55%',
-                      left: '43%',
-                      transform: 'translateX(-50%) rotate(12deg)'
-                    }}
-                  />
-                </span>
-                utfit Of The Day
-              </h1>
+                letterSpacing: '0.025em',
+              }}
+            >
+              My Closet
+            </h1>
+            <img
+              src="/hanger-logo-new.png"
+              alt="Hanger"
+              style={{
+                position: 'absolute',
+                top: '30px',
+                left: '92px',
+                width: '34px',
+                height: '34px',
+                transform: 'rotate(10deg)',
+                zIndex: 0
+              }}
+            />
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search your closet"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-white border-2 border-gray-300 rounded-full py-3 pl-12 pr-4 text-gray-600 focus:outline-none focus:border-gray-400 shadow-md text-sm"
+                style={{ width: '320px' }}
+              />
             </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <button 
+              onClick={openAddItemModal}
+              className="bg-[#0B2C21] text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:opacity-90 shadow-md"
+            >
+              <Plus className="w-4 h-4" />
+              <span style={{ fontFamily: 'Inter', fontSize: '14px', fontWeight: '500' }}>
+                Add Items
+              </span>
+            </button>
+          </div>
+        </div>
+        
+        <div className="px-6 pt-4">
+          <div className="inline-flex bg-white p-1 rounded-full shadow-md">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
+                  activeTab === tab
+                    ? 'bg-[#0B2C21] text-white'
+                    : 'text-gray-600'
+                }`}
+                style={{ fontFamily: 'Playfair Display, serif' }}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {activeTab === 'My Items' && (
+          <>
+            <div className="px-6 mt-8 mb-8">
+              <div className="grid grid-cols-4 gap-8">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-gray-800 mb-2">{totalItems}</div>
+                  <div className="text-gray-600" style={{ fontFamily: 'Inter' }}>Total Items</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-gray-800 mb-2">{recentlyWorn}</div>
+                  <div className="text-gray-600" style={{ fontFamily: 'Inter' }}>Recently Worn</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-gray-800 mb-2">{neverWorn}</div>
+                  <div className="text-gray-600" style={{ fontFamily: 'Inter' }}>Never Worn</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-gray-800 mb-2">{favorites}</div>
+                  <div className="text-gray-600" style={{ fontFamily: 'Inter' }}>Favorites</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 mt-4 mb-8">
+              <div className="flex flex-wrap gap-3">
+                {filters.map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setActiveFilter(filter)}
+                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                      activeFilter === filter
+                        ? 'bg-[#0B2C21] text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                    style={{ fontFamily: 'Inter' }}
+                  >
+                    {filter}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="px-6 pb-6">
+              {isLoadingItems ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-4 border-[#0B2C21] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading your closet...</p>
+                </div>
+              ) : filteredItems.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-600 mb-4">No items found. Start building your closet!</p>
+                  <button 
+                    onClick={openAddItemModal}
+                    className="bg-[#0B2C21] text-white px-6 py-3 rounded-full hover:opacity-90"
+                  >
+                    Add Your First Item
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-4 justify-items-center">
+                  {filteredItems.map((item) => (
+                    <div 
+                      key={item.id} 
+                      className="bg-white rounded-xl shadow-lg overflow-hidden group relative cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 ease-in-out w-full max-w-xs"
+                    >
+                      <div
+                        onClick={() => handleOpenItemDetails(item)}
+                        className="cursor-pointer"
+                      >
+                        <div className="relative h-80 bg-gray-50 overflow-hidden">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            {item.image ? (
+                              <>
+                                {imageLoadingStates[item.id] && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                                    <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                                  </div>
+                                )}
+                                <img
+                                  src={getProxiedImageUrl(item.image)}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                  onLoadStart={() => handleImageStart(item.id)}
+                                  onLoad={() => handleImageLoad(item.id)}
+                                  onError={(e) => {
+                                    handleImageError(item.id)
+                                    console.log('Image failed to load:', item.image)
+                                    
+                                    if (shouldUseCors(item.image) && e.currentTarget.crossOrigin) {
+                                      console.log('Retrying without CORS...')
+                                      e.currentTarget.crossOrigin = ''
+                                      e.currentTarget.src = item.image
+                                      return
+                                    }
+                                    
+                                    e.currentTarget.style.display = 'none'
+                                    const parent = e.currentTarget.parentElement
+                                    if (parent && !parent.querySelector('.fallback-icon')) {
+                                      const fallbackDiv = document.createElement('div')
+                                      fallbackDiv.className = 'fallback-icon flex items-center justify-center w-full h-full'
+                                      fallbackDiv.innerHTML = `<div class="w-16 h-16 text-gray-300">${getCategoryIcon(item.category)}</div>`
+                                      parent.appendChild(fallbackDiv)
+                                    }
+                                  }}
+                                  crossOrigin={shouldUseCors(item.image) ? "anonymous" : undefined}
+                                  referrerPolicy="no-referrer"
+                                />
+                              </>
+                            ) : (
+                              <div className="w-16 h-16 text-gray-300">
+                                {getCategoryIcon(item.category)}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="absolute top-3 left-3 bg-gray-500 bg-opacity-80 text-white px-2 py-1 rounded text-xs font-medium">
+                            {getCategoryLabel(item.category)}
+                          </div>
+                          
+                          {isUrlImage(item.image) && (
+                            <div className="absolute top-3 right-20 bg-blue-500 bg-opacity-80 text-white px-2 py-1 rounded text-xs font-medium flex items-center space-x-1">
+                              <Link className="w-3 h-3" />
+                              <span>URL</span>
+                            </div>
+                          )}
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleToggleFavorite(item)
+                            }}
+                            className={`absolute top-3 right-12 p-1 rounded-full transition-all ${
+                              item.isFavorite 
+                                ? 'bg-yellow-500 text-white shadow-md' 
+                                : 'bg-white/80 text-gray-600 opacity-0 group-hover:opacity-100 hover:bg-yellow-100 hover:text-yellow-600'
+                            }`}
+                            title={item.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                          >
+                            <Star className={`w-4 h-4 ${item.isFavorite ? 'fill-current' : ''}`} />
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteItem(item)
+                            }}
+                            className="absolute top-3 right-3 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                            title="Delete item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="p-4 bg-white">
+                          <h3 className="font-semibold text-gray-800 mb-2 text-lg truncate" style={{ fontFamily: 'Playfair Display, serif' }}>
+                            {item.name}
+                          </h3>
+                          
+                          <p className="text-sm text-gray-600 mb-3" style={{ fontFamily: 'Inter' }}>
+                            {item.brand} • Size {item.size} • {item.color}
+                          </p>
+                          
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {item.tags.slice(0, 2).map((tag, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
+                                style={{ fontFamily: 'Inter' }}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {item.tags.length > 2 && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded" style={{ fontFamily: 'Inter' }}>
+                                +{item.tags.length - 2}
+                              </span>
+                            )}
+                          </div>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleToggleWear(item)
+                            }}
+                            className={`w-full py-2 rounded-lg text-sm flex items-center justify-center space-x-2 transition-colors ${
+                              item.isWorn ? 'bg-[#2A5F4F] text-white hover:bg-[#0B2C21]' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>
+                              {item.isWorn ? 'Worn' : 'Not Worn'}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'Browse Catalog' && (
+          <>
+            <div className="px-6 mt-8 mb-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
+                Browse Wardrobe Essentials
+              </h2>
+              <p className="text-gray-600" style={{ fontFamily: 'Inter' }}>
+                Quickly add common items you already own to your closet
+              </p>
+            </div>
+
+            <div className="px-6 pb-6">
+              <div className="flex flex-wrap gap-3 mb-8">
+                {filters.map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setActiveFilter(filter)}
+                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                      activeFilter === filter
+                        ? 'bg-[#0B2C21] text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                    style={{ fontFamily: 'Inter' }}
+                  >
+                    {filter}
+                  </button>
+                ))}
+              </div>
+              
+              <div className="grid grid-cols-3 gap-6">
+                {getCatalogFilteredItems().map(item => (
+                  <div key={item.id} className="relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                    <div className="relative">
+                      <div className="w-full h-80 bg-gray-100 flex items-center justify-center">
+                        {getCategoryIcon(item.category)}
+                      </div>
+                      <div className="absolute top-3 left-3 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs font-medium">
+                        {getCategoryLabel(item.category)}
+                      </div>
+                    </div>
+                    
+                    <div className="p-4">
+                      <h3 className="font-semibold text-gray-800 mb-1" style={{ fontFamily: 'Inter' }}>
+                        {item.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-3" style={{ fontFamily: 'Inter' }}>
+                        {item.description}
+                      </p>
+                      <p className="text-xs text-gray-500 mb-4" style={{ fontFamily: 'Inter' }}>
+                        Common Brands: {item.commonBrands.join(', ')}
+                      </p>
+                      
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => handleAddCatalogItem(item)}
+                          className={`flex-1 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 transition-colors ${
+                            addedItems.has(item.id) ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {addedItems.has(item.id) ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              <span>Added</span>
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-4 h-4" />
+                              <span>Quick Add</span>
+                            </>
+                          )}
+                        </button>
+                        
+                        <button 
+                          onClick={() => handleAddWithUrl(item)}
+                          className="px-3 py-2 rounded-lg text-sm bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors flex items-center"
+                          title="Add with URL reference"
+                        >
+                          <Link className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {showAddItemModal && (
+        <AddItemModal
+          selectedImage={selectedImage}
+          setSelectedImage={setSelectedImage}
+          handleFileUpload={handleFileUpload}
+          handleInputChange={handleInputChange}
+          itemData={itemData}
+          handleSaveItem={handleSaveItem}
+          isUploading={isUploading}
+          onClose={resetForm}
+          fileInputRef={fileInputRef}
+          onCameraClick={() => setShowCameraModal(true)}
+        />
+      )}
+
+      {showItemDetailsModal && selectedItemForDetails && (
+        <ItemDetailsModal 
+          item={selectedItemForDetails}
+          onClose={handleCloseItemDetails}
+          onToggleWear={handleToggleWear}
+          onUpdateItem={handleUpdateItem}
+          onDelete={() => handleDeleteItem(selectedItemForDetails)}
+        />
+      )}
+
+      {showUrlModal && selectedCatalogItem && (
+        <div className="fixed inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center z-50">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-6 w-96 shadow-2xl border border-white/30 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Playfair Display, serif' }}>
+                Add {selectedCatalogItem.name}
+              </h3>
+              <button 
+                onClick={() => setShowUrlModal(false)}
+                className="p-1 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-800 mb-1" style={{ fontFamily: 'Inter' }}>
+                  Image URL (optional)
+                </label>
+                <input
+                  type="url"
+                  value={urlReference}
+                  onChange={(e) => setUrlReference(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#0B2C21] text-gray-800"
+                  style={{ fontFamily: 'Inter' }}
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Add a reference image URL from shopping sites or your photos
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-800 mb-1" style={{ fontFamily: 'Inter' }}>
+                  Brand
+                </label>
                 <input
                   type="text"
-                  placeholder="Search your outfits"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-white border-2 border-gray-300 rounded-full py-3 pl-12 pr-4 text-gray-600 focus:outline-none focus:border-gray-400 shadow-md text-sm w-80"
+                  value={catalogItemData.brand}
+                  onChange={(e) => setCatalogItemData(prev => ({ ...prev, brand: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#0B2C21] text-gray-800"
                   style={{ fontFamily: 'Inter' }}
                 />
               </div>
-
-              <button 
-                onClick={handleLogTodaysLook}
-                disabled={isUploading}
-                className={`px-6 py-3 rounded-full flex items-center space-x-2 shadow-md transition-all ${
-                  isUploading 
-                    ? 'bg-gray-400 text-white cursor-not-allowed' 
-                    : 'bg-[#0B2C21] text-white hover:opacity-90'
-                }`}
-                style={{ fontFamily: 'Inter', fontSize: '14px', fontWeight: '500' }}
-              >
-                <Plus className="w-4 h-4" />
-                <span>
-                  {isUploading ? 'Uploading...' : 'Log Today\'s Look'}
-                </span>
-              </button>
-
-              {/* Refresh button */}
-              <button 
-                onClick={async () => {
-                  console.log('Manual refresh triggered')
-                  await forceRefreshOutfits()
-                  if (user) await fetchUserProfile()
-                }}
-                disabled={isUploading}
-                className={`p-3 rounded-full shadow-md transition-all ${
-                  isUploading 
-                    ? 'bg-gray-400 text-white cursor-not-allowed' 
-                    : 'bg-white text-[#0B2C21] hover:bg-gray-50 border border-gray-200'
-                }`}
-                title="Refresh outfits"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div className="px-6 pt-4">
-            <div className="flex flex-wrap gap-3 mb-6">
-                {tabs.map((tab) => {
-                    const isSpecialTab = tab === 'All Outfits' || tab === 'Favorites' || tab === '+ Add Tab'
-                    const isSelected = activeTab === tab
-                    
-                    let tabClasses = `flex items-center space-x-1 px-4 py-3 rounded-lg text-sm font-medium transition-all group `
-
-                    if (isSelected) {
-                        tabClasses += isSpecialTab 
-                            ? 'bg-[#0B2C21] text-white shadow-inner transform translate-y-1' 
-                            : 'bg-transparent text-[#0B2C21] shadow-inner shadow-gray-900/30 transform translate-y-1'
-                    } else {
-                        tabClasses += 'bg-gray-100 text-gray-600 hover:bg-gray-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-                    }
-
-                    return (
-                        <button
-                            key={tab}
-                            onClick={() => handleTabClick(tab)}
-                            onContextMenu={(e) => {
-                                e.preventDefault()
-                                if (!isSpecialTab) {
-                                    handleDeleteTab(tab)
-                                }
-                            }}
-                            className={tabClasses}
-                            style={{ fontFamily: 'Playfair Display, serif' }}
-                            title={!isSpecialTab ? 'Right-click to delete' : ''}
-                        >
-                            <span>{tab === 'Favorites' ? 'Favorites ❤️' : tab}</span>
-                            {!isSpecialTab && (
-                                <span 
-                                    className="w-4 h-4 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer hover:text-red-500"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleDeleteTab(tab)
-                                    }}
-                                >
-                                    <X className="w-3 h-3" />
-                                </span>
-                            )}
-                        </button>
-                    )
-                })}
-            </div>
-            <div className="border-b border-gray-200 mb-6"></div>
-          </div>
-
-          <div className="px-6 pb-6">
-            <OutfitGrid
-              outfits={filteredOutfits}
-              isLoading={isLoadingOutfits}
-              onOutfitClick={handleOutfitClick}
-              onLike={handleLike}
-              onEdit={handleEditOutfit}
-              onDelete={handleDeleteOutfit}
-              onCreateFirst={handleLogTodaysLook}
-              formatTimePosted={formatTimePosted}
-            />
-          </div>
-        </div>
-      </div>
-
-      <SettingsModal 
-        isOpen={showSettingsModal} 
-        onClose={() => setShowSettingsModal(false)}
-        currentUser={user}
-        onUserUpdate={updateUserData}
-        isOfflineMode={false}
-      />
-
-      {showOutfitModal && selectedOutfit && (
-        <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex">
-            <div className="flex-1 relative">
-              <img
-                src={selectedOutfit.image}
-                alt={selectedOutfit.title}
-                className="w-full h-full object-contain"
-              />
-              <button
-                onClick={closeOutfitModal}
-                className="absolute top-4 left-4 p-1 bg-[#0B2C21]/70 hover:bg-[#0B2C21]/100 text-white rounded-full transition-all shadow-md"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="w-96 p-8 overflow-y-auto">
-              <div className="flex items-start justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-800 flex-1" style={{ fontFamily: 'Playfair Display, serif' }}>
-                  {selectedOutfit.title}
-                </h2>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleLike(selectedOutfit.id)
-                    setSelectedOutfit({...selectedOutfit, liked: !selectedOutfit.liked})
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-all ml-3"
-                >
-                  <Heart className={`w-6 h-6 ${selectedOutfit.liked ? 'text-red-500 fill-current' : 'text-gray-600 hover:text-red-500'}`} />
-                </button>
-              </div>
-
-              {selectedOutfit.description && (
-                <p className="text-gray-700 leading-relaxed mb-6" style={{ fontFamily: 'Inter' }}>
-                  {selectedOutfit.description}
-                </p>
-              )}
-
-              <div className="mb-6">
-                <span className="inline-block px-4 py-2 bg-[#0B2C21] text-white rounded-full font-semibold">
-                   {selectedOutfit.category}
-                </span>
-              </div>
-
-              {selectedOutfit.tags && selectedOutfit.tags.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3" style={{ fontFamily: 'Inter' }}>
-                    Tags
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedOutfit.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200 transition-colors"
-                        style={{ fontFamily: 'Inter' }}
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="text-sm text-gray-500 border-t pt-4" style={{ fontFamily: 'Inter' }}>
-                 Posted {formatTimePosted(selectedOutfit.created_at)}
-              </div>
               
-              <div className="mt-6 flex justify-end space-x-2">
-                <button
-                  onClick={() => handleEditOutfit(selectedOutfit)}
-                  className="p-2 text-sm text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDeleteOutfit(selectedOutfit)}
-                  className="p-2 text-sm text-red-600 bg-gray-100 rounded-full hover:bg-red-100 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showCreateOutfitModal && (
-        <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
-          <div className="bg-white/95 backdrop-blur-md rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-white/20">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-semibold text-[#0B2C21]" style={{ fontFamily: 'Playfair Display, serif' }}>
-                {isEditing ? 'Edit Outfit' : 'Log Today\'s Look'}
-              </h3>
-              <button
-                onClick={handleCloseCreateModal}
-                disabled={isUploading}
-                className={`p-2 rounded-full transition-colors ${
-                  isUploading 
-                    ? 'cursor-not-allowed text-gray-400' 
-                    : 'hover:bg-gray-100 text-gray-500'
-                }`}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              {!selectedImage ? (
-                <div className="mb-6">
-                  <h4 className="text-lg font-medium text-[#0B2C21] mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-                    Add Outfit Photo
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <button
-                      onClick={() => startCamera('user')}
-                      disabled={isUploading}
-                      className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors ${
-                        isUploading
-                          ? 'border-gray-200 cursor-not-allowed'
-                          : 'border-gray-300 hover:border-[#0B2C21] hover:bg-gray-50'
-                      }`}
-                    >
-                      <Camera className="w-12 h-12 text-gray-400 mb-3" />
-                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Playfair Display, serif' }}>
-                        Take Photo
-                      </span>
-                    </button>
-                    
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
-                      className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg transition-colors ${
-                        isUploading
-                          ? 'border-gray-200 cursor-not-allowed'
-                          : 'border-gray-300 hover:border-[#0B2C21] hover:bg-gray-50'
-                      }`}
-                    >
-                      <Upload className="w-12 h-12 text-gray-400 mb-3" />
-                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Playfair Display, serif' }}>
-                        Upload Photo
-                      </span>
-                    </button>
-                  </div>
-                  
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-800 mb-1" style={{ fontFamily: 'Inter' }}>
+                    Size
+                  </label>
                   <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    disabled={isUploading}
-                    className="hidden"
+                    type="text"
+                    value={catalogItemData.size}
+                    onChange={(e) => setCatalogItemData(prev => ({ ...prev, size: e.target.value }))}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#0B2C21] text-gray-800"
+                    style={{ fontFamily: 'Inter' }}
                   />
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="flex items-start space-x-6">
-                    <div className="relative flex-shrink-0">
-                      <img
-                        src={selectedImage}
-                        alt="Selected"
-                        className="w-48 h-64 object-contain rounded-lg shadow-md"
-                      />
-                      <button
-                        onClick={() => setSelectedImage(null)}
-                        disabled={isUploading}
-                        className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
-                          isUploading
-                            ? 'bg-gray-400 text-white cursor-not-allowed'
-                            : 'bg-red-500 text-white hover:bg-red-600'
-                        }`}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col space-y-3">
-                      <button
-                        onClick={() => startCamera('user')}
-                        disabled={isUploading}
-                        className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                          isUploading
-                            ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                            : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
-                        }`}
-                        style={{ fontFamily: 'Playfair Display, serif' }}
-                      >
-                        Take New Photo
-                      </button>
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                        className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                          isUploading
-                            ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                            : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
-                        }`}
-                        style={{ fontFamily: 'Playfair Display, serif' }}
-                      >
-                        Choose Different Photo
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div>
-                      <label htmlFor="title" className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-                        Title
-                      </label>
-                      <input
-                        type="text"
-                        id="title"
-                        value={outfitData.title}
-                        onChange={(e) => handleInputChange('title', e.target.value)}
-                        disabled={isUploading}
-                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] placeholder-gray-700 text-gray-900 ${
-                          isUploading ? 'bg-gray-100 cursor-not-allowed' : ''
-                        }`}
-                        placeholder="e.g., My favorite work outfit"
-                        style={{ fontFamily: 'Inter' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="description" className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-                        Description (optional)
-                      </label>
-                      <textarea
-                        id="description"
-                        value={outfitData.description}
-                        onChange={(e) => handleInputChange('description', e.target.value)}
-                        disabled={isUploading}
-                        rows={3}
-                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] placeholder-gray-700 text-gray-900 ${
-                          isUploading ? 'bg-gray-100 cursor-not-allowed' : ''
-                        }`}
-                        placeholder="Describe your outfit, materials, or style."
-                        style={{ fontFamily: 'Inter' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="category" className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-                        Category
-                      </label>
-                      <select
-                        id="category"
-                        value={outfitData.category}
-                        onChange={(e) => handleInputChange('category', e.target.value)}
-                        disabled={isUploading}
-                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] text-gray-900 ${
-                          isUploading ? 'bg-gray-100 cursor-not-allowed' : ''
-                        }`}
-                        style={{ fontFamily: 'Inter' }}
-                      >
-                        {allCategories.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="tags" className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-                        Tags (optional)
-                      </label>
-                      <input
-                        type="text"
-                        id="tags"
-                        value={outfitData.tags}
-                        onChange={(e) => handleInputChange('tags', e.target.value)}
-                        disabled={isUploading}
-                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] placeholder-gray-700 text-gray-900 ${
-                          isUploading ? 'bg-gray-100 cursor-not-allowed' : ''
-                        }`}
-                        placeholder="e.g., blazer, jeans, boots"
-                        style={{ fontFamily: 'Inter' }}
-                      />
-                      <p className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Inter' }}>
-                        Separate tags with commas
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Progress bar for uploads */}
-                  {isUploading && uploadProgress > 0 && (
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-600">Uploading...</span>
-                        <span className="text-sm text-gray-600">{uploadProgress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-[#0B2C21] h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${uploadProgress}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-end mt-8">
-                    <button
-                      onClick={handleSaveOrUpdateOutfit}
-                      disabled={isUploading || !selectedImage || !outfitData.title}
-                      className={`px-6 py-3 rounded-full flex items-center space-x-2 font-medium text-sm transition-all ${
-                        isUploading || !selectedImage || !outfitData.title 
-                          ? 'bg-gray-400 text-white cursor-not-allowed'
-                          : 'bg-[#0B2C21] text-white hover:opacity-90'
-                      }`}
-                      style={{ fontFamily: 'Inter' }}
-                    >
-                      {isUploading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          <span>Uploading... Please wait</span>
-                        </>
-                      ) : (
-                        <span>{isEditing ? 'Update Outfit' : 'Save Outfit'}</span>
-                      )}
-                    </button>
-                  </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-800 mb-1" style={{ fontFamily: 'Inter' }}>
+                    Color
+                  </label>
+                  <input
+                    type="text"
+                    value={catalogItemData.color}
+                    onChange={(e) => setCatalogItemData(prev => ({ ...prev, color: e.target.value }))}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#0B2C21] text-gray-800"
+                    style={{ fontFamily: 'Inter' }}
+                  />
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success Modal */}
-      {successMessage && (
-        <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
-          <div className="bg-white/95 backdrop-blur-md rounded-lg p-8 shadow-xl border border-white/20 max-w-sm w-full text-center">
-            <div className="mb-4">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
-                Outfit Posted! 🎉
-              </h3>
-              <p className="text-gray-600" style={{ fontFamily: 'Inter' }}>
-                Your look is now live in your feed!
-              </p>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-800 mb-1" style={{ fontFamily: 'Inter' }}>
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={catalogItemData.tags}
+                  onChange={(e) => setCatalogItemData(prev => ({ ...prev, tags: e.target.value }))}
+                  placeholder="casual, work, summer"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#0B2C21] text-gray-800"
+                  style={{ fontFamily: 'Inter' }}
+                />
+              </div>
             </div>
-          </div>
-        </div>
-      )}
-
-
-
-      {showCamera && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
-          <div className="relative w-full max-w-2xl">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="w-full rounded-lg"
-            />
             
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-4">
-              <button
-                onClick={handleTakePhoto}
-                className="bg-white text-black px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
-                style={{ fontFamily: 'Inter' }}
-              >
-                Take Photo
-              </button>
-              <button
-                onClick={stopCamera}
-                className="bg-gray-800 text-white px-6 py-3 rounded-full font-medium hover:bg-gray-700 transition-colors"
+            <div className="flex justify-center space-x-4 mt-6">
+              <button 
+                onClick={() => setShowUrlModal(false)}
+                className="px-6 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
                 style={{ fontFamily: 'Inter' }}
               >
                 Cancel
+              </button>
+              <button 
+                onClick={handleSaveUrlReference}
+                disabled={isUploading}
+                className="px-6 py-2 rounded-lg bg-[#0B2C21] text-white hover:opacity-90 transition-colors disabled:opacity-50"
+                style={{ fontFamily: 'Inter' }}
+              >
+                {isUploading ? 'Adding...' : 'Add to Closet'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <canvas ref={canvasRef} className="hidden" />
+      <CameraModal
+        isOpen={showCameraModal}
+        onClose={() => setShowCameraModal(false)}
+        onPhotoTaken={handlePhotoTakenFromModal}
+      />
 
-      {/* Delete Tab Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-white/20 flex items-center justify-center z-50">
-          <div className="bg-white/95 backdrop-blur-md rounded-lg p-6 w-96 shadow-xl border border-white/20">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Delete Category
-            </h3>
-            <p className="text-gray-600 mb-6" style={{ fontFamily: 'Inter' }}>
-              Are you sure you want to delete the "{tabToDelete}" category? This action cannot be undone.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false)
-                  setTabToDelete('')
-                }}
-                className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                style={{ fontFamily: 'Inter' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteTab}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                style={{ fontFamily: 'Inter' }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Tab Modal */}
-      {showAddTabModal && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-white/20 flex items-center justify-center z-50">
-          <div className="bg-white/95 backdrop-blur-md rounded-lg p-6 w-96 shadow-xl border border-white/20">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Create New Category
-            </h3>
-            <input
-              type="text"
-              value={newTabName}
-              onChange={(e) => setNewTabName(e.target.value)}
-              placeholder="Enter category name (e.g., Formal, Casual, Party)"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#0B2C21] text-gray-700"
-              style={{ fontFamily: 'Inter' }}
-              onKeyPress={(e) => e.key === 'Enter' && handleCreateTab()}
-              autoFocus
-            />
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowAddTabModal(false)
-                  setNewTabName('')
-                }}
-                className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                style={{ fontFamily: 'Inter' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateTab}
-                disabled={!newTabName.trim()}
-                className="flex-1 px-4 py-2 bg-[#0B2C21] text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                style={{ fontFamily: 'Inter' }}
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Delete Outfit Modal */}
-      {showDeleteOutfitModal && outfitToDelete && (
+      {showDeleteModal && itemToDelete && (
         <div className="fixed inset-0 backdrop-blur-md bg-black/5 flex items-center justify-center z-50">
           <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6 w-96 shadow-2xl border border-white/30">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
-              Delete Outfit
+            <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+              Confirm Deletion
             </h3>
-            <p className="text-gray-600 mb-6" style={{ fontFamily: 'Inter' }}>
-              Are you sure you want to delete the <span className="font-bold text-gray-800">"{outfitToDelete.title}"</span> outfit? This action cannot be undone.
+            <p className="mb-6 text-gray-600" style={{ fontFamily: 'Inter' }}>
+              Are you sure you want to delete <span className="font-bold text-gray-800">{itemToDelete.name}</span>? This action cannot be undone.
             </p>
-            <div className="flex space-x-3">
+            <div className="flex justify-center space-x-4">
               <button 
-                onClick={() => setShowDeleteOutfitModal(false)}
-                className="flex-1 px-4 py-2 text-gray-600 bg-gray-100/80 rounded-lg hover:bg-gray-200/80 transition-colors backdrop-blur-sm"
+                onClick={cancelDelete}
+                className="px-4 py-2 rounded-lg text-gray-600 bg-gray-100/80 hover:bg-gray-200/80 transition-colors"
                 style={{ fontFamily: 'Inter' }}
               >
                 Cancel
               </button>
               <button 
-                onClick={confirmDeleteOutfit}
-                className="flex-1 px-4 py-2 bg-red-500/90 text-white rounded-lg hover:bg-red-600/90 transition-colors backdrop-blur-sm"
+                onClick={confirmDeleteItem}
+                className="px-4 py-2 bg-red-500/90 text-white hover:bg-red-600/90 transition-colors"
                 style={{ fontFamily: 'Inter' }}
               >
                 Delete
@@ -1268,6 +1501,6 @@ export default function HomePage() {
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }
