@@ -34,16 +34,17 @@ export default function AddItemModal({
   onCameraClick, 
 }: AddItemModalProps) {
   
-  const internalFileInputRef = useRef<HTMLInputElement>(null)
-  
   const startCamera = () => {
     onCameraClick();
   }
 
   const triggerUpload = () => {
-    console.log('Upload clicked')
-    if (internalFileInputRef.current) {
-      internalFileInputRef.current.click()
+    console.log('Upload clicked - triggering file input')
+    // Use the passed fileInputRef instead of creating a new one
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    } else {
+      console.error('File input ref is null')
     }
   }
 
@@ -90,13 +91,7 @@ export default function AddItemModal({
                 </button>
               </div>
               
-              <input
-                ref={internalFileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-              />
+              {/* Hidden file input - this should be rendered in the parent component */}
             </div>
           ) : (
             <div className="space-y-6">
