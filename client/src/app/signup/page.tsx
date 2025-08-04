@@ -17,7 +17,6 @@ export default function SignupPage() {
     password_confirm: ''
   })
   const [passwordError, setPasswordError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -30,17 +29,10 @@ export default function SignupPage() {
     if (name === 'password' || name === 'password_confirm') {
       setPasswordError('')
     }
-    setSuccessMessage('')
   } 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    console.log('=== FORM DATA DEBUG ===')
-    console.log('formData.username:', formData.username)
-    console.log('formData.email:', formData.email) 
-    console.log('Full formData:', formData)
-    console.log('========================')
 
     if (formData.password !== formData.password_confirm) {
       setPasswordError('Passwords do not match')
@@ -48,26 +40,12 @@ export default function SignupPage() {
     }
 
     try {
-      // Show immediate feedback
-      setSuccessMessage('Creating your account...')
-      
       await register(formData)
-      setSuccessMessage('Account created successfully! Redirecting to login...')
-      setTimeout(() => {
-        router.push('/login')
-      }, 1500) // Faster redirect
+      // Seamless redirect - no messages, just go straight to login
+      router.push('/login')
     } catch (err: any) {
       console.error('Registration failed:', err)
-      setSuccessMessage('') // Clear success message on error
-      
-      // Check if it's a timeout error but registration might have succeeded
-      if (err.message && err.message.includes('may have been created')) {
-        setSuccessMessage('Registration might have succeeded! Please try logging in.')
-        setTimeout(() => {
-          router.push('/login')
-        }, 2500)
-      }
-      // Other errors are handled by useAuth hook
+      // Only show errors if registration actually failed
     }
   }
 
@@ -100,6 +78,7 @@ export default function SignupPage() {
             </div>
           </div>
 
+          {/* Only show errors - no success messages */}
           {error && (
             <div className="mb-3 p-3 bg-red-100 border border-red-400 rounded-lg max-w-sm">
               <p className="text-center text-red-600 font-semibold text-sm">{error}</p>
@@ -109,12 +88,6 @@ export default function SignupPage() {
           {passwordError && (
             <div className="mb-3 p-3 bg-red-100 border border-red-400 rounded-lg max-w-sm">
               <p className="text-center text-red-600 font-semibold text-sm">{passwordError}</p>
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="mb-3 p-3 bg-green-100 border border-green-400 rounded-lg max-w-sm">
-              <p className="text-center text-green-600 font-semibold text-sm">{successMessage}</p>
             </div>
           )}
 
