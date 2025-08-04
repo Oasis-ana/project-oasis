@@ -182,6 +182,17 @@ export const useOutfits = () => {
     try {
       console.log(`🗑️ Deleting outfit ${outfitId}...`)
       
+      // Store reference to current outfits for potential restore
+      let originalOutfits: Outfit[] = []
+      
+      // Remove from local state immediately for better UX
+      setOutfits(prevOutfits => {
+        originalOutfits = prevOutfits // Store the original state
+        const filtered = prevOutfits.filter(outfit => outfit.id !== outfitId)
+        console.log(`Optimistically removed outfit. Count: ${filtered.length} (was ${prevOutfits.length})`)
+        return filtered
+      })
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/outfits/${outfitId}/`, {
         method: 'DELETE',
         headers: {
@@ -195,18 +206,13 @@ export const useOutfits = () => {
 
       // DELETE requests typically return 204 (No Content) or 200
       if (response.ok || response.status === 204) {
-        console.log(`✅ Delete successful for outfit ${outfitId}`)
-        
-        // Remove from local state
-        setOutfits(prevOutfits => {
-          const filtered = prevOutfits.filter(outfit => outfit.id !== outfitId)
-          console.log(`Updated outfits count: ${filtered.length} (was ${prevOutfits.length})`)
-          return filtered
-        })
-        
+        console.log(`✅ Delete confirmed successful for outfit ${outfitId}`)
         return true
       } else {
         console.error(`❌ Delete failed for outfit ${outfitId}:`, response.status)
+        
+        // Restore the outfit to state since delete failed
+        setOutfits(originalOutfits)
         
         // Try to get error details
         try {
@@ -218,8 +224,33 @@ export const useOutfits = () => {
         
         return false
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`❌ Delete exception for outfit ${outfitId}:`, error)
+      
+      // If there's a network error but the outfit might have been deleted,
+      // let's assume success after a timeout (similar to upload logic)
+      if (error?.name === 'TypeError' || error?.message?.includes('Failed to fetch')) {
+        console.log('Network error during delete - will verify success after delay')
+        
+        // Wait a moment then check if outfit was actually deleted
+        setTimeout(async () => {
+          try {
+            await fetchOutfits() // This will refresh the entire list from server
+          } catch (e) {
+            console.error('Could not verify delete status:', e)
+          }
+        }, 2000)
+        
+        // Return true optimistically
+        return true
+      }
+      
+      // For other errors, restore state and return false
+      setOutfits(prevOutfits => {
+        // If we can't restore original, just refetch
+        fetchOutfits()
+        return prevOutfits
+      })
       return false
     }
   }
