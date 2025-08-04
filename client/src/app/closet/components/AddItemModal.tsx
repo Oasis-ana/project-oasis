@@ -43,29 +43,40 @@ export default function AddItemModal({
   const handleUploadClick = () => {
     console.log('Upload button clicked!')
     
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.style.display = 'none'
     
-    if (fileInput) {
-      console.log('Found file input, clicking it')
-      fileInput.click()
-    } else {
-      console.log('Creating new file input')
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.accept = 'image/*'
-      input.onchange = (e) => {
-        const target = e.target as HTMLInputElement
-        if (target.files?.[0]) {
-          console.log('File selected via created input')
-          const fakeEvent = {
-            target: target,
-            currentTarget: target
-          } as React.ChangeEvent<HTMLInputElement>
-          handleFileUpload(fakeEvent)
+    input.onchange = (event) => {
+      const target = event.target as HTMLInputElement
+      const file = target.files?.[0]
+      
+      if (file) {
+        console.log('File selected:', file.name)
+        
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Image size must be less than 5MB')
+          return
         }
+        
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = e.target?.result as string
+          setSelectedImage(result)
+          console.log('Image set successfully')
+        }
+        reader.onerror = () => {
+          console.error('Error reading file')
+          alert('Error reading file. Please try again.')
+        }
+        reader.readAsDataURL(file)
       }
-      input.click()
     }
+    
+    document.body.appendChild(input)
+    input.click()
+    document.body.removeChild(input)
   }
 
   return (
@@ -116,10 +127,7 @@ export default function AddItemModal({
                 ref={localFileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => {
-                  console.log('File input onChange triggered:', e.target.files?.[0])
-                  handleFileUpload(e)
-                }}
+                onChange={handleFileUpload}
                 className="hidden"
                 style={{ display: 'none' }}
               />
