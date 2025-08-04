@@ -34,39 +34,17 @@ export default function AddItemModal({
   onCameraClick, 
 }: AddItemModalProps) {
   
-  const localFileInputRef = useRef<HTMLInputElement>(null)
+  const internalFileInputRef = useRef<HTMLInputElement>(null)
   
   const startCamera = () => {
     onCameraClick();
   }
 
-  const handleUploadClick = () => {
-    console.log('Upload button clicked!')
-    
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    input.style.display = 'none'
-    
-    input.onchange = (event) => {
-      const target = event.target as HTMLInputElement
-      console.log('File selected via created input:', target.files?.[0])
-      
-      // Create a fake React event to pass to the parent's handleFileUpload
-      const fakeEvent = {
-        target: target,
-        currentTarget: target,
-        preventDefault: () => {},
-        stopPropagation: () => {},
-        nativeEvent: event
-      } as React.ChangeEvent<HTMLInputElement>
-      
-      handleFileUpload(fakeEvent)
+  const triggerUpload = () => {
+    console.log('Upload clicked')
+    if (internalFileInputRef.current) {
+      internalFileInputRef.current.click()
     }
-    
-    document.body.appendChild(input)
-    input.click()
-    document.body.removeChild(input)
   }
 
   return (
@@ -102,9 +80,8 @@ export default function AddItemModal({
                 </button>
                 
                 <button
-                  onClick={handleUploadClick}
+                  onClick={triggerUpload}
                   className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#0B2C21] hover:bg-gray-50 transition-colors"
-                  type="button"
                 >
                   <Upload className="w-12 h-12 text-gray-400 mb-3" />
                   <span className="text-sm font-medium text-gray-600" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -114,11 +91,10 @@ export default function AddItemModal({
               </div>
               
               <input
-                ref={localFileInputRef}
+                ref={internalFileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleFileUpload}
-                className="hidden"
                 style={{ display: 'none' }}
               />
             </div>
@@ -148,7 +124,7 @@ export default function AddItemModal({
                     Take New Photo
                   </button>
                   <button
-                    onClick={handleUploadClick}
+                    onClick={triggerUpload}
                     className="px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     style={{ fontFamily: 'Playfair Display, serif' }}
                   >
