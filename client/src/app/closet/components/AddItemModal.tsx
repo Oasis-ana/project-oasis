@@ -38,11 +38,8 @@ export default function AddItemModal({
   }
 
   const triggerUpload = () => {
-    console.log('Upload clicked - triggering file input')
-    // Use the passed fileInputRef instead of internal one
     if (fileInputRef.current) {
       fileInputRef.current.click()
-      console.log('File input clicked successfully')
     } else {
       console.error('File input ref is null')
     }
@@ -90,8 +87,6 @@ export default function AddItemModal({
                   </span>
                 </button>
               </div>
-              
-              {/* REMOVED THE INTERNAL FILE INPUT - we use the one from parent */}
             </div>
           ) : (
             <div className="space-y-6">

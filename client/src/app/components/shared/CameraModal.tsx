@@ -56,7 +56,6 @@ export default function CameraModal({ isOpen, onClose, onPhotoTaken }: CameraMod
         }
       }
     } catch (error) {
-      console.error('Error accessing camera:', error)
       setError('Unable to access camera. Please check your permissions.')
       setIsLoading(false)
     }

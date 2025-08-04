@@ -56,7 +56,7 @@ export default function ClosetPage() {
     category: 'Tops',
     tags: '',
   })
-
+  
   const [showCamera, setShowCamera] = useState(false)
   const [showCameraModal, setShowCameraModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -76,7 +76,6 @@ export default function ClosetPage() {
   
   const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({})
 
-  // Success message display function
   const showSuccess = (message: string) => {
     setSuccessMessage(message)
     setShowSuccessModal(true)
@@ -100,7 +99,6 @@ export default function ClosetPage() {
   const isUrlImage = (imageUrl: string) => {
     if (!imageUrl) return false
     
-   
     const isMediaStorageImage =
       imageUrl.includes('.amazonaws.com') ||
       imageUrl.includes('cloudfront.net') ||
@@ -280,160 +278,28 @@ export default function ClosetPage() {
   }
 
   const getCatalogItems = () => [
-    { 
-      id: 'c1', 
-      name: 'White Button-Down Shirt', 
-      category: 'Tops', 
-      description: 'Classic collared button-up', 
-      commonBrands: ['Uniqlo', 'J.Crew']
-    },
-    { 
-      id: 'c2', 
-      name: 'Black T-Shirt', 
-      category: 'Tops', 
-      description: 'Basic crew neck tee', 
-      commonBrands: ['Hanes', 'Uniqlo']
-    },
-    { 
-      id: 'c3', 
-      name: 'White T-Shirt', 
-      category: 'Tops', 
-      description: 'Basic white tee', 
-      commonBrands: ['Hanes', 'Uniqlo']
-    },
-    { 
-      id: 'c4', 
-      name: 'Striped Long-Sleeve', 
-      category: 'Tops', 
-      description: 'Navy/white stripes', 
-      commonBrands: ['J.Crew', 'Madewell']
-    },
-    { 
-      id: 'c5', 
-      name: 'Cashmere Sweater', 
-      category: 'Tops', 
-      description: 'Soft pullover sweater', 
-      commonBrands: ['Uniqlo', 'Everlane']
-    },
-    { 
-      id: 'c6', 
-      name: 'Cardigan', 
-      category: 'Tops', 
-      description: 'Button-up sweater', 
-      commonBrands: ['J.Crew', 'Madewell']
-    },
-    { 
-      id: 'c7', 
-      name: 'Dark Wash Jeans', 
-      category: 'Bottoms', 
-      description: 'Classic blue denim', 
-      commonBrands: ['Levi\'s', 'Madewell']
-    },
-    { 
-      id: 'c8', 
-      name: 'Light Wash Jeans', 
-      category: 'Bottoms', 
-      description: 'Faded blue denim', 
-      commonBrands: ['Levi\'s', 'American Eagle']
-    },
-    { 
-      id: 'c9', 
-      name: 'Black Pants', 
-      category: 'Bottoms', 
-      description: 'Dress pants or slacks', 
-      commonBrands: ['Banana Republic', 'Ann Taylor']
-    },
-    { 
-      id: 'c10', 
-      name: 'Leggings', 
-      category: 'Bottoms', 
-      description: 'Stretch athletic pants', 
-      commonBrands: ['Lululemon', 'Athleta']
-    },
-    { 
-      id: 'c11', 
-      name: 'Little Black Dress', 
-      category: 'Dresses', 
-      description: 'Classic cocktail dress', 
-      commonBrands: ['Zara', 'Banana Republic']
-    },
-    { 
-      id: 'c12', 
-      name: 'Wrap Dress', 
-      category: 'Dresses', 
-      description: 'Flattering wrap-style', 
-      commonBrands: ['DVF', 'J.Crew']
-    },
-    { 
-      id: 'c13', 
-      name: 'Maxi Dress', 
-      category: 'Dresses', 
-      description: 'Long flowing dress', 
-      commonBrands: ['Free People', 'Anthropologie']
-    },
-    { 
-      id: 'c14', 
-      name: 'Denim Jacket', 
-      category: 'Outerwear', 
-      description: 'Classic jean jacket', 
-      commonBrands: ['Levi\'s', 'Madewell']
-    },
-    { 
-      id: 'c15', 
-      name: 'Black Blazer', 
-      category: 'Outerwear', 
-      description: 'Professional jacket', 
-      commonBrands: ['Zara', 'Banana Republic']
-    },
-    { 
-      id: 'c16', 
-      name: 'Leather Jacket', 
-      category: 'Outerwear', 
-      description: 'Edgy moto jacket', 
-      commonBrands: ['AllSaints', 'Madewell']
-    },
-    { 
-      id: 'c17', 
-      name: 'White Sneakers', 
-      category: 'Shoes', 
-      description: 'Classic tennis shoes', 
-      commonBrands: ['Adidas', 'Nike']
-    },
-    { 
-      id: 'c18', 
-      name: 'Black Heels', 
-      category: 'Shoes', 
-      description: 'Professional pumps', 
-      commonBrands: ['Cole Haan', 'Nine West']
-    },
-    { 
-      id: 'c19', 
-      name: 'Ballet Flats', 
-      category: 'Shoes', 
-      description: 'Comfortable flat shoes', 
-      commonBrands: ['Tory Burch', 'Cole Haan']
-    },
-    { 
-      id: 'c20', 
-      name: 'Black Belt', 
-      category: 'Accessories', 
-      description: 'Classic leather belt', 
-      commonBrands: ['Coach', 'Kate Spade']
-    },
-    { 
-      id: 'c21', 
-      name: 'Watch', 
-      category: 'Accessories', 
-      description: 'Classic timepiece', 
-      commonBrands: ['Apple', 'Michael Kors']
-    },
-    { 
-      id: 'c22', 
-      name: 'Sunglasses', 
-      category: 'Accessories', 
-      description: 'UV protection eyewear', 
-      commonBrands: ['Ray-Ban', 'Oakley']
-    }
+    { id: 'c1', name: 'White Button-Down Shirt', category: 'Tops', description: 'Classic collared button-up', commonBrands: ['Uniqlo', 'J.Crew'] },
+    { id: 'c2', name: 'Black T-Shirt', category: 'Tops', description: 'Basic crew neck tee', commonBrands: ['Hanes', 'Uniqlo'] },
+    { id: 'c3', name: 'White T-Shirt', category: 'Tops', description: 'Basic white tee', commonBrands: ['Hanes', 'Uniqlo'] },
+    { id: 'c4', name: 'Striped Long-Sleeve', category: 'Tops', description: 'Navy/white stripes', commonBrands: ['J.Crew', 'Madewell'] },
+    { id: 'c5', name: 'Cashmere Sweater', category: 'Tops', description: 'Soft pullover sweater', commonBrands: ['Uniqlo', 'Everlane'] },
+    { id: 'c6', name: 'Cardigan', category: 'Tops', description: 'Button-up sweater', commonBrands: ['J.Crew', 'Madewell'] },
+    { id: 'c7', name: 'Dark Wash Jeans', category: 'Bottoms', description: 'Classic blue denim', commonBrands: ['Levi\'s', 'Madewell'] },
+    { id: 'c8', name: 'Light Wash Jeans', category: 'Bottoms', description: 'Faded blue denim', commonBrands: ['Levi\'s', 'American Eagle'] },
+    { id: 'c9', name: 'Black Pants', category: 'Bottoms', description: 'Dress pants or slacks', commonBrands: ['Banana Republic', 'Ann Taylor'] },
+    { id: 'c10', name: 'Leggings', category: 'Bottoms', description: 'Stretch athletic pants', commonBrands: ['Lululemon', 'Athleta'] },
+    { id: 'c11', name: 'Little Black Dress', category: 'Dresses', description: 'Classic cocktail dress', commonBrands: ['Zara', 'Banana Republic'] },
+    { id: 'c12', name: 'Wrap Dress', category: 'Dresses', description: 'Flattering wrap-style', commonBrands: ['DVF', 'J.Crew'] },
+    { id: 'c13', name: 'Maxi Dress', category: 'Dresses', description: 'Long flowing dress', commonBrands: ['Free People', 'Anthropologie'] },
+    { id: 'c14', name: 'Denim Jacket', category: 'Outerwear', description: 'Classic jean jacket', commonBrands: ['Levi\'s', 'Madewell'] },
+    { id: 'c15', name: 'Black Blazer', category: 'Outerwear', description: 'Professional jacket', commonBrands: ['Zara', 'Banana Republic'] },
+    { id: 'c16', name: 'Leather Jacket', category: 'Outerwear', description: 'Edgy moto jacket', commonBrands: ['AllSaints', 'Madewell'] },
+    { id: 'c17', name: 'White Sneakers', category: 'Shoes', description: 'Classic tennis shoes', commonBrands: ['Adidas', 'Nike'] },
+    { id: 'c18', name: 'Black Heels', category: 'Shoes', description: 'Professional pumps', commonBrands: ['Cole Haan', 'Nine West'] },
+    { id: 'c19', name: 'Ballet Flats', category: 'Shoes', description: 'Comfortable flat shoes', commonBrands: ['Tory Burch', 'Cole Haan'] },
+    { id: 'c20', name: 'Black Belt', category: 'Accessories', description: 'Classic leather belt', commonBrands: ['Coach', 'Kate Spade'] },
+    { id: 'c21', name: 'Watch', category: 'Accessories', description: 'Classic timepiece', commonBrands: ['Apple', 'Michael Kors'] },
+    { id: 'c22', name: 'Sunglasses', category: 'Accessories', description: 'UV protection eyewear', commonBrands: ['Ray-Ban', 'Oakley'] }
   ]
 
   const handleAddCatalogItem = async (catalogItem: any) => {
@@ -484,10 +350,8 @@ export default function ClosetPage() {
 
         setClothingItems(prev => [...prev, newItem])
         showSuccess("Item Added! 🎉")
-        console.log('✅ Item added successfully:', newItem.name)
       }
       else {
-        console.error('❌ Failed to add item to backend')
         setAddedItems(prev => {
           const newSet = new Set(prev)
           newSet.delete(catalogItem.id)
@@ -496,7 +360,6 @@ export default function ClosetPage() {
       }
     }
     catch (error) {
-      console.error('❌ Error adding catalog item:', error)
       setAddedItems(prev => {
         const newSet = new Set(prev)
         newSet.delete(catalogItem.id)
@@ -586,7 +449,6 @@ export default function ClosetPage() {
 
         setClothingItems(prev => [...prev, newItem])
         showSuccess("Item Added! 🎉")
-        console.log('✅ Item with URL reference added successfully!')
         
         setAddedItems(prev => new Set([...prev, selectedCatalogItem.id]))
         setTimeout(() => {
@@ -603,12 +465,10 @@ export default function ClosetPage() {
         setCatalogItemData({ brand: '', size: '', color: '', tags: '' })
       }
       else {
-        console.error('❌ Failed to add item')
         alert('Failed to add item. Please try again.')
       }
     }
     catch (error) {
-      console.error('❌ Error adding item:', error)
       alert('Error adding item. Please check your connection and try again.')
     }
     finally {
@@ -657,7 +517,6 @@ export default function ClosetPage() {
       }
     }
     catch (error) {
-      console.error('Error toggling favorite:', error)
       setClothingItems(clothingItems)
       if (selectedItemForDetails && selectedItemForDetails.id === item.id) {
         setSelectedItemForDetails(item.id === selectedItemForDetails.id ? { ...selectedItemForDetails, isFavorite: !selectedItemForDetails.isFavorite } : selectedItemForDetails);
@@ -681,18 +540,11 @@ export default function ClosetPage() {
     }
 
     try {
-      console.log(`Attempting to delete item: ${itemToDelete.id}`)
-      
-      // Close modal immediately for better UX (optimistic UI)
       setShowDeleteModal(false)
       setItemToDelete(null)
       
-      // Show optimistic update - remove item from UI immediately
       setClothingItems(prev => prev.filter(item => item.id !== itemToDelete.id))
       
-      // Don't show any success message for delete - just remove silently
-      
-      // Then perform the actual delete in the background
       const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/${itemToDelete.id}/`, {
         method: 'DELETE',
         headers: {
@@ -702,18 +554,11 @@ export default function ClosetPage() {
       })
 
       if (!response.ok) {
-        console.error('❌ Failed to delete item from backend')
-        // Restore the item if delete failed
         setClothingItems(prev => [...prev, itemToDelete])
         alert('Failed to delete item. Please try again.')
-      } else {
-        console.log('✅ Item deleted successfully:', itemToDelete.name)
       }
     }
     catch (error) {
-      console.error('❌ Error deleting item:', error)
-      
-      // Restore the item if there was an error
       setClothingItems(prev => [...prev, itemToDelete])
       alert('Failed to delete item. Please check your connection.')
     }
@@ -746,16 +591,12 @@ export default function ClosetPage() {
         return
       }
       
-      console.log('File selected:', file.name, 'Size:', file.size)
-      
       const reader = new FileReader()
       reader.onload = (e) => {
         const result = e.target?.result as string
         setSelectedImage(result)
-        console.log('Image loaded successfully')
       }
       reader.onerror = () => {
-        console.error('Error reading file')
         alert('Error reading file. Please try again.')
       }
       reader.readAsDataURL(file)
@@ -811,8 +652,6 @@ export default function ClosetPage() {
       formData.append('is_worn', 'false')
       formData.append('image', blob, 'clothing-item.jpg')
 
-      console.log('Uploading item:', itemData.name)
-
       const response = await fetch(`${API_BASE_URL}/api/auth/clothing-items/`, {
         method: 'POST',
         headers: {
@@ -842,19 +681,15 @@ export default function ClosetPage() {
         setClothingItems(prev => [...prev, newItem])
         setShowSuccessModal(true)
         showSuccess("Item Added! 🎉")
-        console.log('✅ Item added successfully!')
         
         resetForm()
       }
       else {
-        console.error('❌ Failed to add item - Response not OK')
         const errorText = await response.text()
-        console.error('Error response:', errorText)
         alert('Failed to add item. Please try again.')
       }
     }
     catch (error) {
-      console.error('❌ Error adding item:', error)
       alert('Error adding item. Please check your connection and try again.')
     }
     finally {
@@ -887,7 +722,6 @@ export default function ClosetPage() {
   }
 
   const handleOpenItemDetails = (item: ClothingItem) => {
-    console.log("Attempting to open modal for item:", item.name);
     setSelectedItemForDetails(item);
     setShowItemDetailsModal(true);
   }
@@ -936,7 +770,6 @@ export default function ClosetPage() {
       }
     }
     catch (error) {
-      console.error('Error toggling wear status:', error);
       setClothingItems(clothingItems);
       setSelectedItemForDetails(itemToUpdate);
       alert('Network error. Please check your connection.');
@@ -974,7 +807,6 @@ export default function ClosetPage() {
       });
 
       if (!response.ok) {
-        console.error('Failed to update item on backend');
         setClothingItems(clothingItems);
         alert('Failed to update item. Please try again.');
       }
@@ -988,7 +820,6 @@ export default function ClosetPage() {
       }
     }
     catch (error) {
-      console.error('Error updating item:', error);
       setClothingItems(clothingItems);
       alert('Network error. Please check your connection.');
     }
@@ -1012,7 +843,6 @@ export default function ClosetPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F3EC] flex">
-      {/* Success Modal matching home page */}
       {showSuccessModal && (
         <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-md rounded-lg p-8 shadow-xl border border-white/20 max-w-sm w-full text-center">
@@ -1033,7 +863,6 @@ export default function ClosetPage() {
         </div>
       )}
 
-      {/* Sidebar  */}
       <Sidebar 
         user={user} 
         onShowSettings={() => {}}
@@ -1203,10 +1032,7 @@ export default function ClosetPage() {
                                   onLoad={() => handleImageLoad(item.id)}
                                   onError={(e) => {
                                     handleImageError(item.id)
-                                    console.log('Image failed to load:', item.image)
-                                    
                                     if (shouldUseCors(item.image) && e.currentTarget.crossOrigin) {
-                                      console.log('Retrying without CORS...')
                                       e.currentTarget.crossOrigin = ''
                                       e.currentTarget.src = item.image
                                       return
@@ -1422,7 +1248,6 @@ export default function ClosetPage() {
         )}
       </div>
 
-      {/* Add Item Modal */}
       {showAddItemModal && (
         <AddItemModal
           selectedImage={selectedImage}
@@ -1438,7 +1263,6 @@ export default function ClosetPage() {
         />
       )}
 
-      {/* THIS IS THE CRITICAL FIX - HIDDEN FILE INPUT */}
       <input
         ref={fileInputRef}
         type="file"
@@ -1447,7 +1271,6 @@ export default function ClosetPage() {
         style={{ display: 'none' }}
       />
 
-      {/* Item Details Modal */}
       {showItemDetailsModal && selectedItemForDetails && (
         <ItemDetailsModal 
           item={selectedItemForDetails}
@@ -1458,7 +1281,6 @@ export default function ClosetPage() {
         />
       )}
 
-      {/* URL Reference Modal */}
       {showUrlModal && selectedCatalogItem && (
         <div className="fixed inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center z-50">
           <div className="bg-white/95 backdrop-blur-sm rounded-lg p-6 w-96 shadow-2xl border border-white/30 max-h-[90vh] overflow-y-auto">
@@ -1569,14 +1391,12 @@ export default function ClosetPage() {
         </div>
       )}
 
-      {/* Camera Modal */}
       <CameraModal
         isOpen={showCameraModal}
         onClose={() => setShowCameraModal(false)}
         onPhotoTaken={handlePhotoTakenFromModal}
       />
 
-      {/* Delete Modal */}
       {showDeleteModal && itemToDelete && (
         <div className="fixed inset-0 backdrop-blur-md bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 shadow-2xl">
