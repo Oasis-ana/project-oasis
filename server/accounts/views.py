@@ -456,7 +456,6 @@ def like_outfit(request, outfit_id):
         return Response({'error': 'Error updating like status'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# ADD THIS NEW VIEW FOR DEBUGGING/TESTING CONNECTION
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def health_check(request):

@@ -100,22 +100,57 @@ class ClothingItemSerializer(serializers.ModelSerializer):
 
 
 class OutfitSerializer(serializers.ModelSerializer):
+    # THIS IS THE NEW FIELD TO HANDLE CLOTHING ITEMS
+    items = serializers.PrimaryKeyRelatedField(
+        many=True, 
+        queryset=ClothingItem.objects.all(),
+        required=False,
+        allow_empty=True
+    )
+    
     class Meta:
         model = Outfit
         fields = [
             'id', 'title', 'description', 'category', 'occasion',
+            'items',  # THIS IS THE NEW FIELD ADDED
             'image', 'tags', 'liked', 'created_at', 'updated_at'
         ]
         read_only_fields = ('id', 'created_at', 'updated_at')
 
+    def validate_items(self, value):
+        """Ensure all items belong to the requesting user"""
+        request = self.context.get('request')
+        if request and value:
+            user_item_ids = ClothingItem.objects.filter(
+                user=request.user
+            ).values_list('id', flat=True)
+            
+            for item in value:
+                if item.id not in user_item_ids:
+                    raise serializers.ValidationError(
+                        f"Item {item.id} does not belong to you"
+                    )
+        return value
+
     def create(self, validated_data):
         print(f"🔍 OutfitSerializer.create called with data: {validated_data}")
+        
+        # Extract items data before creating outfit
+        items_data = validated_data.pop('items', [])
         validated_data['user'] = self.context['request'].user
         
         try:
+            # Create the outfit first
             outfit = super().create(validated_data)
             print(f"✅ Outfit created successfully: {outfit.title}")
+            
+            # Then set the items relationship
+            if items_data:
+                outfit.items.set(items_data)
+                print(f"✅ Added {len(items_data)} items to outfit")
+            
             return outfit
+            
         except Exception as e:
             print(f"❌ Error in OutfitSerializer.create: {str(e)}")
             import traceback
@@ -124,10 +159,22 @@ class OutfitSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         print(f"🔍 OutfitSerializer.update called for outfit: {instance.title}")
+        
+        # Extract items data before updating
+        items_data = validated_data.pop('items', None)
+        
         try:
+            # Update the outfit fields
             updated_outfit = super().update(instance, validated_data)
+            
+            # Update items relationship if provided
+            if items_data is not None:
+                updated_outfit.items.set(items_data)
+                print(f"✅ Updated items for outfit: {len(items_data)} items")
+            
             print(f"✅ Outfit updated successfully: {updated_outfit.title}")
             return updated_outfit
+            
         except Exception as e:
             print(f"❌ Error in OutfitSerializer.update: {str(e)}")
             import traceback
@@ -149,6 +196,23 @@ class OutfitSerializer(serializers.ModelSerializer):
                 print(f"❌ Error getting outfit image URL for {instance.title}: {e}")
                 data['image'] = None
             
+            # Include full item details instead of just IDs
+            try:
+                items_data = []
+                for item in instance.items.all():
+                    items_data.append({
+                        'id': item.id,
+                        'name': item.name,
+                        'category': item.category,
+                        'image': item.get_display_image(),
+                        'brand': item.brand,
+                        'color': item.color
+                    })
+                data['items'] = items_data
+            except Exception as e:
+                print(f"❌ Error getting outfit items: {e}")
+                data['items'] = []
+            
             # Ensure tags is always a list
             if data.get('tags') is None:
                 data['tags'] = []
@@ -169,6 +233,7 @@ class OutfitSerializer(serializers.ModelSerializer):
                 'description': instance.description if hasattr(instance, 'description') else '',
                 'category': instance.category if hasattr(instance, 'category') else 'Casual',
                 'occasion': instance.occasion if hasattr(instance, 'occasion') else '',
+                'items': [],
                 'image': None,
                 'tags': [],
                 'liked': instance.liked if hasattr(instance, 'liked') else False,
