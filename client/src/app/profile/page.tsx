@@ -82,7 +82,6 @@ export default function ProfilePage() {
       formData.append('avatar', file)
 
       const token = localStorage.getItem('authToken')
-      // FIXED: Use environment variable instead of hardcoded localhost
       const response = await fetch(`${API_URL}/api/auth/upload-avatar/`, {
         method: 'POST',
         headers: {
@@ -120,6 +119,84 @@ export default function ProfilePage() {
     fileInputRef.current?.click()
   }
 
+  // NEW: Function to load outfits from database
+  const loadOutfitsFromDatabase = async () => {
+    try {
+      const token = localStorage.getItem('authToken')
+      if (!token) return
+
+      const response = await fetch(`${API_URL}/api/auth/outfits/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const outfitsData = await response.json()
+        
+        // Transform the API response to match your local format
+        const transformedOutfits = await Promise.all(
+          outfitsData.map(async (outfit: any) => {
+            // Fetch the full clothing item details for each outfit
+            const itemsWithDetails = await Promise.all(
+              outfit.items.map(async (itemId: string) => {
+                try {
+                  const itemResponse = await fetch(`${API_URL}/api/auth/clothing-items/${itemId}/`, {
+                    headers: {
+                      'Authorization': `Token ${token}`,
+                      'Content-Type': 'application/json'
+                    }
+                  })
+                  if (itemResponse.ok) {
+                    const itemData = await itemResponse.json()
+                    return {
+                      id: itemData.id.toString(),
+                      name: itemData.name,
+                      brand: itemData.brand || 'Unknown',
+                      size: itemData.size || 'Unknown',
+                      color: itemData.color || 'Unknown',
+                      category: itemData.category || 'Other',
+                      image: itemData.image || '',
+                      tags: itemData.tags || [],
+                      isFavorite: itemData.is_favorite || false,
+                      isWorn: itemData.is_worn || false,
+                      lastWorn: itemData.last_worn,
+                      createdAt: itemData.created_at
+                    }
+                  }
+                  return null
+                } catch (error) {
+                  console.error(`Error fetching item ${itemId}:`, error)
+                  return null
+                }
+              })
+            )
+
+            // Filter out any null items (failed fetches)
+            const validItems = itemsWithDetails.filter(item => item !== null)
+
+            return {
+              id: outfit.id.toString(),
+              title: outfit.title,
+              description: outfit.description || '',
+              items: validItems,
+              thumbnail: validItems[0]?.image || '',
+              createdAt: outfit.created_at,
+              isFavorite: outfit.is_favorite || false
+            }
+          })
+        )
+
+        setSavedOutfits(transformedOutfits)
+        localStorage.setItem('savedOutfits', JSON.stringify(transformedOutfits))
+      }
+    } catch (error) {
+      console.log('Failed to load outfits from database, using local storage')
+    }
+  }
+
   useEffect(() => {
     setIsClient(true)
     const cached = localStorage.getItem('userProfile')
@@ -150,7 +227,6 @@ export default function ProfilePage() {
           return
         }
 
-        // FIXED: Use environment variable instead of hardcoded localhost
         const response = await fetch(`${API_URL}/api/auth/profile/`, {
           method: 'GET',
           headers: {
@@ -167,6 +243,9 @@ export default function ProfilePage() {
 
           localStorage.setItem('userProfile', JSON.stringify(userData))
           localStorage.setItem('username', userData.username)
+          
+          // NEW: Load outfits from database after successful profile fetch
+          await loadOutfitsFromDatabase()
         } else if (response.status === 401) {
           localStorage.removeItem('authToken')
           localStorage.removeItem('userProfile')
@@ -205,12 +284,14 @@ export default function ProfilePage() {
     })
   }
 
+  // Your original working handleSaveOutfit (unchanged)
   const handleSaveOutfit = (newOutfit: Outfit) => {
     const updatedOutfits = [newOutfit, ...savedOutfits]
     setSavedOutfits(updatedOutfits)
     localStorage.setItem('savedOutfits', JSON.stringify(updatedOutfits))
   }
 
+  // Your original working handleDeleteOutfit (unchanged)
   const handleDeleteOutfit = (outfitId: string) => {
     const updatedOutfits = savedOutfits.filter(outfit => outfit.id !== outfitId)
     setSavedOutfits(updatedOutfits)
@@ -508,3 +589,4 @@ export default function ProfilePage() {
     </>
   )
 }
+

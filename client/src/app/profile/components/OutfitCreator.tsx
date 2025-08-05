@@ -66,7 +66,6 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
 
     try {
       setIsLoadingItems(true)
-      // FIXED: Use environment variable instead of hardcoded localhost
       const response = await fetch(`${API_URL}/api/auth/clothing-items/`, {
         method: 'GET',
         headers: {
@@ -170,6 +169,32 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
     }
 
     try {
+      // Save to database (but don't block local saving if it fails)
+      const token = localStorage.getItem('authToken')
+      if (token) {
+        try {
+          const outfitData = {
+            title: outfitTitle.trim(),
+            description: outfitDescription.trim(),
+            items: selectedItems.map(item => parseInt(item.id)),
+            category: 'Casual',
+            tags: []
+          }
+          
+          await fetch(`${API_URL}/api/auth/outfits/`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Token ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(outfitData)
+          })
+        } catch (dbError) {
+          console.log('Database save failed, but continuing with local save:', dbError)
+        }
+      }
+
+      // Always save locally (your original working code)
       onSaveOutfit(newOutfit)
       
       setOutfitTitle('')
