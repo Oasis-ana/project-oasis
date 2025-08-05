@@ -67,31 +67,35 @@ export function useAuth() {
     try {
       console.log('Sending register request with:', userData)
       
-      // Ensure we have all required fields properly mapped
       const registrationData = {
-        username: userData.username || '', // Make sure username is not undefined
+        username: userData.username || '',
         email: userData.email || '',
-        first_name: userData.first_name || '', // Optional
-        last_name: userData.last_name || '',   // Optional
+        first_name: userData.first_name || '',
+        last_name: userData.last_name || '',
         password: userData.password || '',
         password_confirm: userData.password_confirm || ''
       }
       
-      // Debug log to see exactly what we're sending
-      console.log('Processed registration data:', registrationData)
-      
-      // Validate required fields before sending
-      if (!registrationData.username.trim()) {
-        throw new Error('Username is required')
-      }
-      if (!registrationData.email.trim()) {
-        throw new Error('Email is required')
-      }
-      if (!registrationData.password.trim()) {
-        throw new Error('Password is required')
-      }
+      if (!registrationData.username.trim()) throw new Error('Username is required')
+      if (!registrationData.email.trim()) throw new Error('Email is required')
+      if (!registrationData.password.trim()) throw new Error('Password is required')
       
       const response = await API.post('/auth/register/', registrationData)
+      
+      // --- AUTOMATIC LOGIN LOGIC ---
+      // After successful registration, get the token to log the user in.
+      const { token } = response.data
+      
+      if (token) {
+        localStorage.setItem('authToken', token)
+        setAuthToken(token)
+        console.log('Registration successful and user logged in.')
+      } else {
+        // This case would happen if your backend doesn't return a token on registration.
+        console.warn('Registration successful, but no auth token was returned from the API for auto-login.')
+      }
+      // --- END OF AUTOMATIC LOGIN LOGIC ---
+
       return response.data
     } catch (err: any) {
       console.error('Register error details:', JSON.stringify(err.response?.data, null, 2))
@@ -112,12 +116,11 @@ export function useAuth() {
         } else if (typeof errorData === 'string') {
           errorMessage = errorData
         } else {
-          // Handle field-specific errors
           const firstError = Object.entries(errorData)[0]
           if (firstError) {
             const [field, messages] = firstError
             const message = Array.isArray(messages) ? messages[0] : messages
-            errorMessage = `${field}: ${message}`
+            errorMessage = `${field.charAt(0).toUpperCase() + field.slice(1)}: ${message}`
           }
         }
       }

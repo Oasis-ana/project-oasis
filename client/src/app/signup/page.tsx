@@ -1,13 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useAuth } from '../hooks/useAuth'
 
+// Helper icons for validation feedback
+const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+const CrossIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+
 export default function SignupPage() {
   const router = useRouter()
-  const { register, loading, error } = useAuth()
+  const { register, loading, error, setError } = useAuth()
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -16,7 +20,28 @@ export default function SignupPage() {
     password: '',
     password_confirm: ''
   })
-  const [passwordError, setPasswordError] = useState('')
+
+  // State for real-time password validation
+  const [passwordValidity, setPasswordValidity] = useState({
+    minLength: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    specialChar: false,
+  })
+
+  // Validate password as the user types
+  useEffect(() => {
+    const { password } = formData
+    setPasswordValidity({
+      minLength: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      specialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    })
+  }, [formData.password])
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -24,28 +49,33 @@ export default function SignupPage() {
       ...formData,
       [name]: value
     })
-    
-    // Clear errors when user types
-    if (name === 'password' || name === 'password_confirm') {
-      setPasswordError('')
-    }
+    // Clear custom errors when user types
+    setError(null)
   } 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null) // Clear previous errors
 
     if (formData.password !== formData.password_confirm) {
-      setPasswordError('Passwords do not match')
+      setError('Passwords do not match')
+      return
+    }
+
+    // Check if all password requirements are met before submitting
+    const allValid = Object.values(passwordValidity).every(Boolean)
+    if (!allValid) {
+      setError("Password does not meet all requirements.")
       return
     }
 
     try {
       await register(formData)
-      // Seamless redirect - no messages, just go straight to login
-      router.push('/login')
+      // On successful registration and auto-login, redirect to the home page
+      router.push('/home')
     } catch (err: any) {
       console.error('Registration failed:', err)
-      // Only show errors if registration actually failed
+      // Error is already set in the useAuth hook
     }
   }
 
@@ -78,259 +108,75 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* Only show errors - no success messages */}
           {error && (
-            <div className="mb-3 p-3 bg-red-100 border border-red-400 rounded-lg max-w-sm">
+            <div className="mb-3 p-3 bg-red-100 border border-red-400 rounded-lg max-w-sm w-[300px]">
               <p className="text-center text-red-600 font-semibold text-sm">{error}</p>
             </div>
           )}
 
-          {passwordError && (
-            <div className="mb-3 p-3 bg-red-100 border border-red-400 rounded-lg max-w-sm">
-              <p className="text-center text-red-600 font-semibold text-sm">{passwordError}</p>
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-5 flex flex-col items-center">
+            {/* Username Field */}
             <div className="relative">
-              <div style={{
-                width: '300px',
-                height: '50px',
-                background: 'rgba(217, 217, 217, 0.40)',
-                display: 'flex',
-                alignItems: 'center',
-                position: 'relative'
-              }}>
-                {!formData.username && (
-                  <span style={{
-                    color: '#000',
-                    fontFamily: 'Inter',
-                    fontSize: '16px',
-                    fontStyle: 'normal',
-                    fontWeight: 200,
-                    lineHeight: 'normal',
-                    letterSpacing: '0.32px',
-                    position: 'absolute',
-                    left: '16px',
-                    pointerEvents: 'none'
-                  }}>
-                    Username <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
-                  </span>
-                )}
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    width: '100%',
-                    height: '100%',
-                    padding: '0 16px',
-                    fontSize: '16px',
-                    fontFamily: 'Inter',
-                    color: '#000'
-                  }}
-                />
+              <div style={{ width: '300px', height: '50px', background: 'rgba(217, 217, 217, 0.40)', display: 'flex', alignItems: 'center', position: 'relative' }}>
+                {!formData.username && (<span style={{ color: '#000', fontFamily: 'Inter', fontSize: '16px', fontWeight: 200, position: 'absolute', left: '16px', pointerEvents: 'none' }}>Username <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span></span>)}
+                <input type="text" name="username" value={formData.username} onChange={handleChange} required style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', height: '100%', padding: '0 16px', fontSize: '16px', fontFamily: 'Inter', color: '#000' }} />
+              </div>
+            </div>
+            
+            {/* Email Field */}
+            <div className="relative">
+              <div style={{ width: '300px', height: '50px', background: 'rgba(217, 217, 217, 0.40)', display: 'flex', alignItems: 'center', position: 'relative' }}>
+                {!formData.email && (<span style={{ color: '#000', fontFamily: 'Inter', fontSize: '16px', fontWeight: 200, position: 'absolute', left: '16px', pointerEvents: 'none' }}>Email <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span></span>)}
+                <input type="email" name="email" value={formData.email} onChange={handleChange} required style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', height: '100%', padding: '0 16px', fontSize: '16px', fontFamily: 'Inter', color: '#000' }} />
               </div>
             </div>
 
-            <div className="relative">
-              <div style={{
-                width: '300px',
-                height: '50px',
-                background: 'rgba(217, 217, 217, 0.40)',
-                display: 'flex',
-                alignItems: 'center',
-                position: 'relative'
-              }}>
-                {!formData.email && (
-                  <span style={{
-                    color: '#000',
-                    fontFamily: 'Inter',
-                    fontSize: '16px',
-                    fontStyle: 'normal',
-                    fontWeight: 200,
-                    lineHeight: 'normal',
-                    letterSpacing: '0.32px',
-                    position: 'absolute',
-                    left: '16px',
-                    pointerEvents: 'none'
-                  }}>
-                    Email <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
-                  </span>
-                )}
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    width: '100%',
-                    height: '100%',
-                    padding: '0 16px',
-                    fontSize: '16px',
-                    fontFamily: 'Inter',
-                    color: '#000'
-                  }}
-                />
+            {/* Password Group (Input + Validation) */}
+            <div className="w-[300px] space-y-2">
+              {/* Password Field */}
+              <div className="relative">
+                <div style={{ width: '100%', height: '50px', background: 'rgba(217, 217, 217, 0.40)', display: 'flex', alignItems: 'center', position: 'relative' }}>
+                  {!formData.password && (<span style={{ color: '#000', fontFamily: 'Inter', fontSize: '16px', fontWeight: 200, position: 'absolute', left: '16px', pointerEvents: 'none' }}>Password <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span></span>)}
+                  <input type="password" name="password" value={formData.password} onChange={handleChange} required style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', height: '100%', padding: '0 16px', fontSize: '16px', fontFamily: 'Inter', color: '#000' }} />
+                </div>
               </div>
+
+              {/* Password Strength Indicator */}
+              {formData.password && (
+                <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                  <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
+                    <li className="flex items-center">{passwordValidity.minLength ? <CheckIcon/> : <CrossIcon/>} <span className="ml-2">8+ characters</span></li>
+                    <li className="flex items-center">{passwordValidity.uppercase ? <CheckIcon/> : <CrossIcon/>} <span className="ml-2">1 uppercase</span></li>
+                    <li className="flex items-center">{passwordValidity.lowercase ? <CheckIcon/> : <CrossIcon/>} <span className="ml-2">1 lowercase</span></li>
+                    <li className="flex items-center">{passwordValidity.number ? <CheckIcon/> : <CrossIcon/>} <span className="ml-2">1 number</span></li>
+                    <li className="flex items-center col-span-2">{passwordValidity.specialChar ? <CheckIcon/> : <CrossIcon/>} <span className="ml-2">1 special character (!@#$...)</span></li>
+                  </ul>
+                </div>
+              )}
             </div>
 
+            {/* Confirm Password Field */}
             <div className="relative">
-              <div style={{
-                width: '300px',
-                height: '50px',
-                background: 'rgba(217, 217, 217, 0.40)',
-                display: 'flex',
-                alignItems: 'center',
-                position: 'relative'
-              }}>
-                {!formData.password && (
-                  <span style={{
-                    color: '#000',
-                    fontFamily: 'Inter',
-                    fontSize: '16px',
-                    fontStyle: 'normal',
-                    fontWeight: 200,
-                    lineHeight: 'normal',
-                    letterSpacing: '0.32px',
-                    position: 'absolute',
-                    left: '16px',
-                    pointerEvents: 'none'
-                  }}>
-                    Password <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
-                  </span>
-                )}
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    width: '100%',
-                    height: '100%',
-                    padding: '0 16px',
-                    fontSize: '16px',
-                    fontFamily: 'Inter',
-                    color: '#000'
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="relative">
-              <div style={{
-                width: '300px',
-                height: '50px',
-                background: 'rgba(217, 217, 217, 0.40)',
-                display: 'flex',
-                alignItems: 'center',
-                position: 'relative'
-              }}>
-                {!formData.password_confirm && (
-                  <span style={{
-                    color: '#000',
-                    fontFamily: 'Inter',
-                    fontSize: '16px',
-                    fontStyle: 'normal',
-                    fontWeight: 200,
-                    lineHeight: 'normal',
-                    letterSpacing: '0.32px',
-                    position: 'absolute',
-                    left: '16px',
-                    pointerEvents: 'none'
-                  }}>
-                    Confirm Password <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span>
-                  </span>
-                )}
-                <input
-                  type="password"
-                  name="password_confirm"
-                  value={formData.password_confirm}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    width: '100%',
-                    height: '100%',
-                    padding: '0 16px',
-                    fontSize: '16px',
-                    fontFamily: 'Inter',
-                    color: '#000'
-                  }}
-                />
+              <div style={{ width: '300px', height: '50px', background: 'rgba(217, 217, 217, 0.40)', display: 'flex', alignItems: 'center', position: 'relative' }}>
+                {!formData.password_confirm && (<span style={{ color: '#000', fontFamily: 'Inter', fontSize: '16px', fontWeight: 200, position: 'absolute', left: '16px', pointerEvents: 'none' }}>Confirm Password <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span></span>)}
+                <input type="password" name="password_confirm" value={formData.password_confirm} onChange={handleChange} required style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', height: '100%', padding: '0 16px', fontSize: '16px', fontFamily: 'Inter', color: '#000' }} />
               </div>
             </div>
 
             <div style={{ width: '300px', textAlign: 'left', marginTop: '8px' }}>
-              <p style={{
-                color: '#000',
-                fontFamily: 'Inter',
-                fontSize: '12px',
-                fontStyle: 'normal',
-                fontWeight: 200,
-                lineHeight: 'normal',
-                letterSpacing: '0.32px'
-              }}>
-                Have an account? <button
-                  type="button"
-                  onClick={() => router.push('/login')}
-                  className="text-blue-600 hover:underline font-medium"
-                  style={{ fontSize: '12px' }}
-                >
-                  Log in
-                </button>
+              <p style={{ color: '#000', fontFamily: 'Inter', fontSize: '12px', fontWeight: 200 }}>
+                Have an account? <button type="button" onClick={() => router.push('/login')} className="text-blue-600 hover:underline font-medium" style={{ fontSize: '12px' }}>Log in</button>
               </p>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                width: '300px',
-                height: '50px',
-                background: loading ? '#6B7280' : '#0B2C21',
-                color: 'white',
-                border: 'none',
-                fontSize: '18px',
-                fontWeight: 'medium',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                marginTop: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: loading ? 0.7 : 1,
-                transition: 'all 0.2s'
-              }}
-            >
+            <button type="submit" disabled={loading} style={{ width: '300px', height: '50px', background: loading ? '#6B7280' : '#0B2C21', color: 'white', border: 'none', fontSize: '18px', fontWeight: 'medium', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: loading ? 0.7 : 1, transition: 'all 0.2s' }}>
               {loading ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '2px solid #ffffff',
-                    borderTop: '2px solid transparent',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }}></div>
+                  <div style={{ width: '16px', height: '16px', border: '2px solid #ffffff', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
                   Creating Account...
                 </div>
               ) : (
-                'Register'
+                'Create Account & Continue'
               )}
             </button>
           </form>
@@ -338,15 +184,7 @@ export default function SignupPage() {
       </div>
 
       <div className="w-1/2 relative">
-        <Image
-          src="/clothing-collage.png"
-          alt="Fashion collage"
-          fill
-          sizes="50vw"
-          quality={100}
-          priority
-          className="object-cover"
-        />
+        <Image src="/clothing-collage.png" alt="Fashion collage" fill sizes="50vw" quality={100} priority className="object-cover" />
       </div>
 
       <style jsx>{`
