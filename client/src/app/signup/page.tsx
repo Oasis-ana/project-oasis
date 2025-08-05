@@ -176,7 +176,7 @@ export default function SignupPage() {
                   Creating Account...
                 </div>
               ) : (
-                'Create Account & Continue'
+                'Create Account'
               )}
             </button>
           </form>
