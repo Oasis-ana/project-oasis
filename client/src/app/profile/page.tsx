@@ -137,7 +137,7 @@ export default function ProfilePage() {
       setOutfitsError('')
       console.log('🔄 Fetching saved outfits from database...')
       
-      const response = await fetch(`${API_URL}/api/auth/outfits/`, {
+      const response = await fetch(`${API_URL}/api/auth/outfits/?category=Saved`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${token}`,
