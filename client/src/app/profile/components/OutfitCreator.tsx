@@ -169,11 +169,11 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
     }
 
     try {
-      // Always save locally first (your original working code)
+      // STEP 1: Always save locally first (your original working code)
       onSaveOutfit(newOutfit)
       console.log('✅ Outfit saved locally successfully')
 
-      // Try to save to database in background
+      // STEP 2: Try to save to database in background
       const token = localStorage.getItem('authToken')
       console.log('🔑 Token exists:', !!token)
       
@@ -183,8 +183,8 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
             title: outfitTitle.trim(),
             description: outfitDescription.trim(),
             items: selectedItems.map(item => parseInt(item.id)),
-            category: 'Saved', // CHANGED: This ensures it stays in Profile only
-            tags: [] // No OOTD tags
+            category: 'Saved', // This ensures it stays in Profile only
+            tags: []
           }
           
           console.log('📦 Sending outfit data to database:', outfitData)
@@ -199,6 +199,7 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
           })
           
           console.log('📡 Database response status:', response.status)
+          console.log('📡 Database response ok:', response.ok)
           
           if (response.ok) {
             const result = await response.json()
@@ -214,7 +215,7 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
         console.log('⚠️ No auth token found')
       }
 
-      // Clean up UI
+      // STEP 3: Clean up UI
       setOutfitTitle('')
       setOutfitDescription('')
       setSelectedItems([])
