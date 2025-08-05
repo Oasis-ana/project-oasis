@@ -196,11 +196,12 @@ export default function HomePage() {
 
   const tabs = ['All Outfits', 'Favorites', ...defaultTabs, ...customTabs, 'Calendar', '+ Add Tab']
   
+  // FIXED: Filter out Profile outfits (category 'Saved') from OOTD page
   const tabFilteredOutfits = activeTab === 'All Outfits' 
-    ? outfits 
+    ? outfits.filter(outfit => outfit.category !== 'Saved')  // BLOCK Profile outfits
     : activeTab === 'Favorites'
-    ? outfits.filter(outfit => outfit.liked)
-    : outfits.filter(outfit => outfit.category === activeTab);
+    ? outfits.filter(outfit => outfit.liked && outfit.category !== 'Saved')  // BLOCK Profile outfits from favorites
+    : outfits.filter(outfit => outfit.category === activeTab && outfit.category !== 'Saved');  // BLOCK Profile outfits from all tabs
 
   const filteredOutfits = tabFilteredOutfits.filter(outfit => {
     if (searchQuery === '') {

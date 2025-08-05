@@ -17,33 +17,35 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showOutfitModal, setShowOutfitModal] = useState(false);
 
-  // Group outfits by date
+
+  const calendarOutfits = useMemo(() => {
+    return outfits.filter(outfit => outfit.category !== 'Saved');
+  }, [outfits]);
+
   const outfitsByDate = useMemo(() => {
     const map = new Map<string, Outfit>();
-    outfits.forEach(outfit => {
+    calendarOutfits.forEach(outfit => {
       const dateKey = new Date(outfit.created_at).toDateString();
       if (!map.has(dateKey)) {
         map.set(dateKey, outfit);
       }
     });
     return map;
-  }, [outfits]);
+  }, [calendarOutfits]);
 
-  // Get calendar grid
+ 
   const calendarDays = useMemo(() => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     
-    // First day of the month
     const firstDay = new Date(year, month, 1);
-    // Last day of the month
+   
     const lastDay = new Date(year, month + 1, 0);
     
-    // Start from the Sunday of the week containing the first day
+  
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
     
-    // Generate 42 days (6 weeks)
     const days = [];
     for (let i = 0; i < 42; i++) {
       const date = new Date(startDate);
@@ -251,15 +253,15 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
             })}
           </div>
 
-          {/* Calendar Footer Stats */}
+          {/* Calendar Footer Stats - Updated to use filtered outfits */}
           <div className="mt-3 pt-2 border-t border-white/10">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
                 <div className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>
-                  {outfits.length}
+                  {calendarOutfits.length}
                 </div>
                 <div className="text-white/60 text-sm" style={{ fontFamily: 'Inter' }}>
-                  Total Outfits
+                  OOTD Outfits
                 </div>
               </div>
               <div>
