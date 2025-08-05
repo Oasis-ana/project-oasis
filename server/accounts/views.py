@@ -310,7 +310,16 @@ def clothing_item_detail(request, item_id):
 def outfits(request):
     if request.method == 'GET':
         try:
+            # Start with the base queryset for the user
             user_outfits = Outfit.objects.filter(user=request.user).order_by('-created_at')
+
+            # Check if a 'category' parameter is in the URL
+            category_filter = request.query_params.get('category', None)
+            if category_filter:
+                # If it exists, filter the queryset further
+                user_outfits = user_outfits.filter(category=category_filter)
+                logger.info(f"Filtering outfits by category: {category_filter}")
+
             serializer = OutfitSerializer(user_outfits, many=True, context={'request': request})
             logger.info(f"Fetched {len(user_outfits)} outfits for user: {request.user.username}")
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -460,6 +469,8 @@ def like_outfit(request, outfit_id):
 @permission_classes([IsAuthenticated])
 def health_check(request):
     """Simple health check endpoint to test connection"""
+    # Import timezone here or at the top of the file
+    from django.utils import timezone
     return Response({
         'status': 'healthy',
         'user': request.user.username,
