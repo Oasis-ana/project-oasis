@@ -26,6 +26,7 @@ interface Outfit {
   thumbnail: string
   createdAt: string
   isFavorite?: boolean
+  category?: string
 }
 
 interface OutfitCreatorProps {
@@ -48,24 +49,30 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
   const [isLoadingItems, setIsLoadingItems] = useState(true)
   const [draggedItem, setDraggedItem] = useState<ClothingItem | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const filters = ['All', 'Tops', 'Bottoms', 'Dresses', 'Outerwear', 'Shoes', 'Accessories']
 
   useEffect(() => {
     if (isOpen) {
       fetchClothingItems()
+      setErrorMessage('') // Clear any previous errors
     }
   }, [isOpen])
 
   const fetchClothingItems = async () => {
     const token = localStorage.getItem('authToken')
     if (!token) {
+      console.log('❌ No auth token found')
+      setErrorMessage('Please log in to access your closet')
       setIsLoadingItems(false)
       return
     }
 
     try {
       setIsLoadingItems(true)
+      console.log('🔄 Fetching clothing items...')
+      
       const response = await fetch(`${API_URL}/api/auth/clothing-items/`, {
         method: 'GET',
         headers: {
@@ -74,8 +81,12 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
         }
       })
 
+      console.log('📡 Fetch response status:', response.status)
+
       if (response.ok) {
         const itemsData = await response.json()
+        console.log('✅ Fetched items:', itemsData.length)
+        
         const transformedItems = itemsData.map((item: any) => ({
           id: item.id.toString(),
           name: item.name,
@@ -91,9 +102,14 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
           createdAt: item.created_at
         }))
         setClosetItems(transformedItems)
+      } else {
+        const errorText = await response.text()
+        console.log('❌ Failed to fetch items:', errorText)
+        setErrorMessage('Failed to load closet items')
       }
     } catch (error) {
-      console.error('Error fetching clothing items:', error)
+      console.error('❌ Error fetching clothing items:', error)
+      setErrorMessage('Network error loading closet items')
     } finally {
       setIsLoadingItems(false)
     }
@@ -152,78 +168,118 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
   }
 
   const handleSaveOutfit = async () => {
-    if (!outfitTitle.trim() || selectedItems.length === 0) {
-      alert('Please add a title and select at least one item')
+    // Clear any previous errors
+    setErrorMessage('')
+    
+    // Basic validation
+    if (!outfitTitle.trim()) {
+      setErrorMessage('Please add a title for your outfit')
+      return
+    }
+    
+    if (selectedItems.length === 0) {
+      setErrorMessage('Please select at least one item for your outfit')
+      return
+    }
+
+    // Check auth
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      setErrorMessage('Please log in to save outfits')
       return
     }
 
     setIsSaving(true)
-
-    const newOutfit: Outfit = {
-      id: Date.now().toString(),
-      title: outfitTitle.trim(),
-      description: outfitDescription.trim(),
-      items: selectedItems,
-      thumbnail: selectedItems[0].image,
-      createdAt: new Date().toISOString()
-    }
+    console.log('💾 Starting outfit save process...')
 
     try {
-      // STEP 1: Always save locally first (your original working code)
-      onSaveOutfit(newOutfit)
-      console.log('✅ Outfit saved locally successfully')
-
-      // STEP 2: Try to save to database in background
-      const token = localStorage.getItem('authToken')
-      console.log('🔑 Token exists:', !!token)
-      
-      if (token) {
-        try {
-          const outfitData = {
-            title: outfitTitle.trim(),
-            description: outfitDescription.trim(),
-            items: selectedItems.map(item => parseInt(item.id)),
-            category: 'Saved', // This ensures it stays in Profile only
-            tags: []
-          }
-          
-          console.log('📦 Sending outfit data to database:', outfitData)
-          
-          const response = await fetch(`${API_URL}/api/auth/outfits/`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Token ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(outfitData)
-          })
-          
-          console.log('📡 Database response status:', response.status)
-          console.log('📡 Database response ok:', response.ok)
-          
-          if (response.ok) {
-            const result = await response.json()
-            console.log('✅ Database save successful:', result)
-          } else {
-            const errorData = await response.json()
-            console.log('❌ Database save failed:', errorData)
-          }
-        } catch (dbError) {
-          console.log('⚠️ Database save failed, but outfit saved locally:', dbError)
-        }
-      } else {
-        console.log('⚠️ No auth token found')
+      // Prepare outfit data - remove image field since backend expects file upload
+      const outfitData = {
+        title: outfitTitle.trim(),
+        description: outfitDescription.trim() || "", // Ensure it's never undefined
+        items: selectedItems.map(item => parseInt(item.id)), // Convert to integers
+        category: 'Saved',
+        tags: []
+        // Remove image field - backend expects file upload, not URL
       }
-
-      // STEP 3: Clean up UI
+      
+      console.log('📦 Sending outfit data to database:', outfitData)
+      console.log('🔍 Data types check:', {
+        title: typeof outfitData.title,
+        description: typeof outfitData.description,
+        items: outfitData.items.map(id => typeof id),
+        category: typeof outfitData.category,
+        tags: typeof outfitData.tags
+      })
+      
+      // Save to database
+      const response = await fetch(`${API_URL}/api/auth/outfits/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(outfitData)
+      })
+      
+      console.log('📡 Database response status:', response.status)
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()))
+      
+      if (!response.ok) {
+        const errorData = await response.text()
+        console.log('❌ Database save failed:', errorData)
+        
+        // Try to parse as JSON for better error messages
+        try {
+          const errorJson = JSON.parse(errorData)
+          console.log('❌ Parsed error:', errorJson)
+          
+          // Extract specific field errors
+          if (errorJson.errors || errorJson.detail) {
+            const errorMsg = errorJson.detail || Object.entries(errorJson.errors || errorJson)
+              .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+              .join('; ')
+            setErrorMessage(`Server error: ${errorMsg}`)
+          } else {
+            setErrorMessage(`Server error: ${errorData}`)
+          }
+        } catch {
+          setErrorMessage(`Server error (${response.status}): ${errorData}`)
+        }
+        return
+      }
+      
+      const savedOutfit = await response.json()
+      console.log('✅ Database save successful:', savedOutfit)
+      
+      // Create local outfit object
+      const localOutfit: Outfit = {
+        id: savedOutfit.id?.toString() || Date.now().toString(),
+        title: outfitTitle.trim(),
+        description: outfitDescription.trim(),
+        items: selectedItems,
+        thumbnail: selectedItems[0]?.image || '',
+        createdAt: savedOutfit.created_at || new Date().toISOString(),
+        category: 'Saved'
+      }
+      
+      // Update local state
+      onSaveOutfit(localOutfit)
+      console.log('✅ Local state updated successfully')
+      
+      // Clean up and close
       setOutfitTitle('')
       setOutfitDescription('')
       setSelectedItems([])
+      setErrorMessage('')
       onClose()
       
+      // Success feedback (you can replace alert with a toast notification)
+      alert('Outfit saved successfully!')
+      
     } catch (error) {
-      console.error('❌ Error in handleSaveOutfit:', error)
-      alert('Failed to save outfit. Please try again.')
+      console.error('❌ Network error saving outfit:', error)
+      setErrorMessage('Network error. Please check your connection and try again.')
     } finally {
       setIsSaving(false)
     }
@@ -235,6 +291,7 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
     setSelectedItems([])
     setSearchQuery('')
     setActiveFilter('All')
+    setErrorMessage('')
     onClose()
   }
 
@@ -265,9 +322,25 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
             }`}
             style={{ fontFamily: 'Inter' }}
           >
-            {isSaving ? 'Saving...' : 'Save Outfit'}
+            {isSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Saving...
+              </>
+            ) : (
+              'Save Outfit'
+            )}
           </button>
         </div>
+
+        {/* Error message display */}
+        {errorMessage && (
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm" style={{ fontFamily: 'Inter' }}>
+              {errorMessage}
+            </p>
+          </div>
+        )}
 
         <div className="flex h-[calc(90vh-80px)]">
           <div className="w-1/3 p-6 border-r border-gray-200 flex flex-col">
@@ -288,6 +361,7 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
                     placeholder="e.g., Casual Weekend Look"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] text-gray-900"
                     style={{ fontFamily: 'Inter' }}
+                    maxLength={100}
                   />
                 </div>
                 
@@ -302,6 +376,7 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2C21] text-gray-900 resize-none"
                     style={{ fontFamily: 'Inter' }}
+                    maxLength={500}
                   />
                 </div>
               </div>
@@ -423,12 +498,36 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
               {isLoadingItems ? (
                 <div className="text-center py-8">
                   <div className="w-8 h-8 border-4 border-[#0B2C21] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading your closet...</p>
+                  <p className="text-gray-600" style={{ fontFamily: 'Inter' }}>Loading your closet...</p>
+                </div>
+              ) : errorMessage && closetItems.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 border-2 border-dashed border-red-300 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <Shirt className="w-8 h-8 text-red-300" />
+                  </div>
+                  <p className="text-red-600 mb-2" style={{ fontFamily: 'Inter' }}>{errorMessage}</p>
+                  <button 
+                    onClick={fetchClothingItems}
+                    className="text-sm text-[#0B2C21] hover:underline"
+                    style={{ fontFamily: 'Inter' }}
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : closetItems.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <Shirt className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <p className="text-gray-600 mb-2" style={{ fontFamily: 'Inter' }}>Your closet is empty</p>
+                  <p className="text-sm text-gray-500" style={{ fontFamily: 'Inter' }}>
+                    Add some clothing items first to create outfits
+                  </p>
                 </div>
               ) : filteredItems.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-600 mb-4">No items found</p>
-                  <p className="text-sm text-gray-500">Try adjusting your search or filters</p>
+                  <p className="text-gray-600 mb-4" style={{ fontFamily: 'Inter' }}>No items found</p>
+                  <p className="text-sm text-gray-500" style={{ fontFamily: 'Inter' }}>Try adjusting your search or filters</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-4">

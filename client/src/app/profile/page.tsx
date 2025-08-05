@@ -61,6 +61,8 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState('outfits')
   const [selectedOutfitForView, setSelectedOutfitForView] = useState<Outfit | null>(null)
   const [showOutfitModal, setShowOutfitModal] = useState(false)
+  const [isLoadingOutfits, setIsLoadingOutfits] = useState(true)
+  const [outfitsError, setOutfitsError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
 
@@ -120,6 +122,64 @@ export default function ProfilePage() {
     fileInputRef.current?.click()
   }
 
+  // Fetch outfits from database
+  const fetchOutfits = async () => {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      console.log('❌ No auth token found for outfits')
+      setIsLoadingOutfits(false)
+      setOutfitsError('Please log in to view your outfits')
+      return
+    }
+
+    try {
+      setIsLoadingOutfits(true)
+      setOutfitsError('')
+      console.log('🔄 Fetching saved outfits from database...')
+      
+      const response = await fetch(`${API_URL}/api/auth/outfits/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      console.log('📡 Outfits fetch response status:', response.status)
+
+      if (response.ok) {
+        const outfitsData = await response.json()
+        console.log('✅ Fetched outfits from database:', outfitsData.length)
+        
+        const transformedOutfits = outfitsData.map((outfit: any) => {
+          // The API now returns full item details, so we just use them directly.
+          return {
+            id: outfit.id.toString(),
+            title: outfit.title,
+            description: outfit.description || '',
+            items: outfit.items || [], // Items are already complete objects
+            thumbnail: (outfit.items && outfit.items[0]) ? outfit.items[0].image : '',
+            createdAt: outfit.created_at,
+            isFavorite: outfit.is_favorite || false
+          };
+        });
+        
+        setSavedOutfits(transformedOutfits)
+        console.log('✅ Outfits loaded and transformed successfully')
+        
+      } else {
+        const errorText = await response.text()
+        console.log('❌ Failed to fetch outfits from database:', errorText)
+        setOutfitsError('Failed to load saved outfits from server')
+      }
+    } catch (error) {
+      console.error('❌ Network error fetching outfits:', error)
+      setOutfitsError('Network error loading outfits')
+    } finally {
+      setIsLoadingOutfits(false)
+    }
+  }
+
   useEffect(() => {
     setIsClient(true)
     const cached = localStorage.getItem('userProfile')
@@ -128,15 +188,6 @@ export default function ProfilePage() {
         setUser(JSON.parse(cached))
       } catch (e) {
         console.error('Error parsing cached user data:', e)
-      }
-    }
-
-    const outfits = localStorage.getItem('savedOutfits')
-    if (outfits) {
-      try {
-        setSavedOutfits(JSON.parse(outfits))
-      } catch (e) {
-        console.error('Error parsing saved outfits:', e)
       }
     }
   }, [])
@@ -185,6 +236,8 @@ export default function ProfilePage() {
 
     if (isClient) {
       fetchUserProfile()
+      // Fetch outfits when component mounts
+      fetchOutfits()
     }
   }, [isClient])
 
@@ -208,13 +261,34 @@ export default function ProfilePage() {
   const handleSaveOutfit = (newOutfit: Outfit) => {
     const updatedOutfits = [newOutfit, ...savedOutfits]
     setSavedOutfits(updatedOutfits)
-    localStorage.setItem('savedOutfits', JSON.stringify(updatedOutfits))
   }
 
-  const handleDeleteOutfit = (outfitId: string) => {
+  const handleDeleteOutfit = async (outfitId: string) => {
+    try {
+      const token = localStorage.getItem('authToken')
+      if (token) {
+        // Try to delete from database
+        const response = await fetch(`${API_URL}/api/auth/outfits/${outfitId}/`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (response.ok) {
+          console.log('✅ Outfit deleted from database')
+        } else {
+          console.log('❌ Failed to delete from database, removing locally only')
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting outfit from database:', error)
+    }
+    
+    // Always remove from local state
     const updatedOutfits = savedOutfits.filter(outfit => outfit.id !== outfitId)
     setSavedOutfits(updatedOutfits)
-    localStorage.setItem('savedOutfits', JSON.stringify(updatedOutfits))
   }
 
   const handleViewOutfit = (outfit: Outfit) => {
@@ -229,6 +303,11 @@ export default function ProfilePage() {
 
   const handleGoBack = () => {
     router.back()
+  }
+
+  // Function to refresh outfits (useful for debugging)
+  const refreshOutfits = () => {
+    fetchOutfits()
   }
 
   if (!isClient) {
@@ -288,6 +367,21 @@ export default function ProfilePage() {
             </div>
           )}
 
+          {/* Outfits Error Display */}
+          {outfitsError && (
+            <div className="ml-32 mr-12 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm" style={{ fontFamily: 'Inter' }}>
+                {outfitsError}
+              </p>
+              <button 
+                onClick={refreshOutfits}
+                className="text-red-800 hover:underline text-sm mt-2"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
           <ProfileHeader
             user={user}
             triggerFileSelect={triggerFileSelect}
@@ -300,7 +394,13 @@ export default function ProfilePage() {
           <div className="pl-32 pr-12">
             {activeTab === 'outfits' && (
               <div className="pb-6">
-                {filteredOutfits.length === 0 ? (
+                {/* Loading state */}
+                {isLoadingOutfits ? (
+                  <div className="text-center py-12">
+                    <div className="w-8 h-8 border-4 border-[#0B2C21] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600" style={{ fontFamily: 'Inter' }}>Loading your outfits...</p>
+                  </div>
+                ) : filteredOutfits.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Shirt className="w-8 h-8 text-gray-400" />
@@ -308,9 +408,19 @@ export default function ProfilePage() {
                     <h3 className="text-lg font-medium text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
                       No outfits yet
                     </h3>
-                    <p className="text-gray-600" style={{ fontFamily: 'Inter' }}>
+                    <p className="text-gray-600 mb-4" style={{ fontFamily: 'Inter' }}>
                       Create your first outfit to start building your style collection
                     </p>
+
+                    {outfitsError && (
+                      <button 
+                        onClick={refreshOutfits}
+                        className="px-4 py-2 bg-[#0B2C21] text-white rounded-lg hover:opacity-90 transition-opacity"
+                        style={{ fontFamily: 'Inter' }}
+                      >
+                        Retry Loading Outfits
+                      </button>
+                    )}
 
                     {isOfflineMode && (
                       <div className="mt-4 text-sm text-blue-600">
