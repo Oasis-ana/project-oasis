@@ -169,19 +169,27 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
     }
 
     try {
-      // Save to database (but don't block local saving if it fails)
+      // Always save locally first (your original working code)
+      onSaveOutfit(newOutfit)
+      console.log('✅ Outfit saved locally successfully')
+
+      // Try to save to database in background
       const token = localStorage.getItem('authToken')
+      console.log('🔑 Token exists:', !!token)
+      
       if (token) {
         try {
           const outfitData = {
             title: outfitTitle.trim(),
             description: outfitDescription.trim(),
             items: selectedItems.map(item => parseInt(item.id)),
-            category: 'Casual',
-            tags: []
+            category: 'Saved', // CHANGED: This ensures it stays in Profile only
+            tags: [] // No OOTD tags
           }
           
-          await fetch(`${API_URL}/api/auth/outfits/`, {
+          console.log('📦 Sending outfit data to database:', outfitData)
+          
+          const response = await fetch(`${API_URL}/api/auth/outfits/`, {
             method: 'POST',
             headers: {
               'Authorization': `Token ${token}`,
@@ -189,20 +197,31 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
             },
             body: JSON.stringify(outfitData)
           })
+          
+          console.log('📡 Database response status:', response.status)
+          
+          if (response.ok) {
+            const result = await response.json()
+            console.log('✅ Database save successful:', result)
+          } else {
+            const errorData = await response.json()
+            console.log('❌ Database save failed:', errorData)
+          }
         } catch (dbError) {
-          console.log('Database save failed, but continuing with local save:', dbError)
+          console.log('⚠️ Database save failed, but outfit saved locally:', dbError)
         }
+      } else {
+        console.log('⚠️ No auth token found')
       }
 
-      // Always save locally (your original working code)
-      onSaveOutfit(newOutfit)
-      
+      // Clean up UI
       setOutfitTitle('')
       setOutfitDescription('')
       setSelectedItems([])
       onClose()
+      
     } catch (error) {
-      console.error('Error saving outfit:', error)
+      console.error('❌ Error in handleSaveOutfit:', error)
       alert('Failed to save outfit. Please try again.')
     } finally {
       setIsSaving(false)

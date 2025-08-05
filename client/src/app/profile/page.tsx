@@ -119,7 +119,7 @@ export default function ProfilePage() {
     fileInputRef.current?.click()
   }
 
-  // NEW: Function to load outfits from database
+  // FIXED: Load outfits from database but ONLY for Profile (not OOTD)
   const loadOutfitsFromDatabase = async () => {
     try {
       const token = localStorage.getItem('authToken')
@@ -136,9 +136,16 @@ export default function ProfilePage() {
       if (response.ok) {
         const outfitsData = await response.json()
         
+        // FILTER: Only load outfits that are for Profile (not OOTD)
+        const profileOutfits = outfitsData.filter((outfit: any) => 
+          outfit.category !== 'OOTD' && 
+          !outfit.tags.includes('ootd') &&
+          !outfit.tags.includes('OOTD')
+        )
+        
         // Transform the API response to match your local format
         const transformedOutfits = await Promise.all(
-          outfitsData.map(async (outfit: any) => {
+          profileOutfits.map(async (outfit: any) => {
             // Fetch the full clothing item details for each outfit
             const itemsWithDetails = await Promise.all(
               outfit.items.map(async (itemId: string) => {
@@ -189,6 +196,7 @@ export default function ProfilePage() {
           })
         )
 
+        console.log(`✅ Loaded ${transformedOutfits.length} Profile outfits from database`)
         setSavedOutfits(transformedOutfits)
         localStorage.setItem('savedOutfits', JSON.stringify(transformedOutfits))
       }
@@ -208,6 +216,7 @@ export default function ProfilePage() {
       }
     }
 
+    // Load from localStorage first (immediate)
     const outfits = localStorage.getItem('savedOutfits')
     if (outfits) {
       try {
@@ -244,7 +253,7 @@ export default function ProfilePage() {
           localStorage.setItem('userProfile', JSON.stringify(userData))
           localStorage.setItem('username', userData.username)
           
-          // NEW: Load outfits from database after successful profile fetch
+          // FIXED: Load outfits from database (but filtered for Profile only)
           await loadOutfitsFromDatabase()
         } else if (response.status === 401) {
           localStorage.removeItem('authToken')
@@ -589,4 +598,3 @@ export default function ProfilePage() {
     </>
   )
 }
-
