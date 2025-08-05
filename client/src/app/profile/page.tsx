@@ -82,7 +82,6 @@ export default function ProfilePage() {
       formData.append('avatar', file)
 
       const token = localStorage.getItem('authToken')
-      // FIXED: Use environment variable instead of hardcoded localhost
       const response = await fetch(`${API_URL}/api/auth/upload-avatar/`, {
         method: 'POST',
         headers: {
@@ -120,6 +119,111 @@ export default function ProfilePage() {
     fileInputRef.current?.click()
   }
 
+  // Add this function to fetch outfits from database
+  const fetchSavedOutfits = async () => {
+    try {
+      const token = localStorage.getItem('authToken')
+      if (!token) {
+        console.log('No auth token found')
+        return
+      }
+
+      console.log('Fetching outfits from database...')
+      const response = await fetch(`${API_URL}/api/auth/outfits/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const outfitsData = await response.json()
+        console.log('Fetched outfits:', outfitsData)
+        
+        // Transform the API response to match your local format
+        const transformedOutfits = await Promise.all(
+          outfitsData.map(async (outfit: any) => {
+            // Fetch the full clothing item details for each outfit
+            const itemsWithDetails = await Promise.all(
+              outfit.items.map(async (itemId: string) => {
+                try {
+                  const itemResponse = await fetch(`${API_URL}/api/auth/clothing-items/${itemId}/`, {
+                    headers: {
+                      'Authorization': `Token ${token}`,
+                      'Content-Type': 'application/json'
+                    }
+                  })
+                  if (itemResponse.ok) {
+                    const itemData = await itemResponse.json()
+                    return {
+                      id: itemData.id.toString(),
+                      name: itemData.name,
+                      brand: itemData.brand || 'Unknown',
+                      size: itemData.size || 'Unknown',
+                      color: itemData.color || 'Unknown',
+                      category: itemData.category || 'Other',
+                      image: itemData.image || '',
+                      tags: itemData.tags || [],
+                      isFavorite: itemData.is_favorite || false,
+                      isWorn: itemData.is_worn || false,
+                      lastWorn: itemData.last_worn,
+                      createdAt: itemData.created_at
+                    }
+                  }
+                  return null
+                } catch (error) {
+                  console.error(`Error fetching item ${itemId}:`, error)
+                  return null
+                }
+              })
+            )
+
+            // Filter out any null items (failed fetches)
+            const validItems = itemsWithDetails.filter(item => item !== null)
+
+            return {
+              id: outfit.id.toString(),
+              title: outfit.title,
+              description: outfit.description || '',
+              items: validItems,
+              thumbnail: validItems[0]?.image || '',
+              createdAt: outfit.created_at,
+              isFavorite: outfit.is_favorite || false
+            }
+          })
+        )
+
+        setSavedOutfits(transformedOutfits)
+        
+        // Also save to localStorage as backup
+        localStorage.setItem('savedOutfits', JSON.stringify(transformedOutfits))
+        
+        setError(null)
+        setIsOfflineMode(false)
+      } else if (response.status === 401) {
+        localStorage.removeItem('authToken')
+        console.log('Auth token invalid')
+      } else {
+        throw new Error('Failed to load outfits from server')
+      }
+    } catch (error) {
+      console.error('Error fetching outfits:', error)
+      
+      // Fallback to localStorage
+      const cachedOutfits = localStorage.getItem('savedOutfits')
+      if (cachedOutfits) {
+        try {
+          setSavedOutfits(JSON.parse(cachedOutfits))
+          setError('Offline mode - showing cached outfits')
+          setIsOfflineMode(true)
+        } catch (e) {
+          console.error('Error parsing cached outfits:', e)
+        }
+      }
+    }
+  }
+
   useEffect(() => {
     setIsClient(true)
     const cached = localStorage.getItem('userProfile')
@@ -150,7 +254,7 @@ export default function ProfilePage() {
           return
         }
 
-        // FIXED: Use environment variable instead of hardcoded localhost
+        // Fetch user profile
         const response = await fetch(`${API_URL}/api/auth/profile/`, {
           method: 'GET',
           headers: {
@@ -167,6 +271,9 @@ export default function ProfilePage() {
 
           localStorage.setItem('userProfile', JSON.stringify(userData))
           localStorage.setItem('username', userData.username)
+          
+          // Fetch outfits after successful profile fetch
+          await fetchSavedOutfits()
         } else if (response.status === 401) {
           localStorage.removeItem('authToken')
           localStorage.removeItem('userProfile')
@@ -180,6 +287,16 @@ export default function ProfilePage() {
         
         setIsOfflineMode(true)
         setError('Offline mode - showing cached data')
+        
+        // Load cached outfits in offline mode
+        const cachedOutfits = localStorage.getItem('savedOutfits')
+        if (cachedOutfits) {
+          try {
+            setSavedOutfits(JSON.parse(cachedOutfits))
+          } catch (e) {
+            console.error('Error parsing cached outfits:', e)
+          }
+        }
       }
     }
 
@@ -205,13 +322,38 @@ export default function ProfilePage() {
     })
   }
 
-  const handleSaveOutfit = (newOutfit: Outfit) => {
+  // Update handleSaveOutfit to add to local state immediately for good UX
+  const handleSaveOutfit = async (newOutfit: Outfit) => {
+    // Add to local state immediately for good UX
     const updatedOutfits = [newOutfit, ...savedOutfits]
     setSavedOutfits(updatedOutfits)
     localStorage.setItem('savedOutfits', JSON.stringify(updatedOutfits))
   }
 
-  const handleDeleteOutfit = (outfitId: string) => {
+  // Update handleDeleteOutfit to also delete from database
+  const handleDeleteOutfit = async (outfitId: string) => {
+    try {
+      const token = localStorage.getItem('authToken')
+      if (token) {
+        // Try to delete from database
+        const response = await fetch(`${API_URL}/api/auth/outfits/${outfitId}/`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Token ${token}`,
+          }
+        })
+
+        if (response.ok) {
+          console.log('Outfit deleted from database')
+        } else {
+          console.error('Failed to delete outfit from database')
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting outfit from database:', error)
+    }
+
+    // Always update local state regardless of database result
     const updatedOutfits = savedOutfits.filter(outfit => outfit.id !== outfitId)
     setSavedOutfits(updatedOutfits)
     localStorage.setItem('savedOutfits', JSON.stringify(updatedOutfits))

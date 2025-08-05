@@ -34,7 +34,7 @@ interface OutfitCreatorProps {
   onSaveOutfit: (outfit: Outfit) => void
 }
 
-// Add API URL configuration
+
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
 
 export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitCreatorProps) {
@@ -66,7 +66,6 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
 
     try {
       setIsLoadingItems(true)
-      // FIXED: Use environment variable instead of hardcoded localhost
       const response = await fetch(`${API_URL}/api/auth/clothing-items/`, {
         method: 'GET',
         headers: {
@@ -160,25 +159,67 @@ export default function OutfitCreator({ isOpen, onClose, onSaveOutfit }: OutfitC
 
     setIsSaving(true)
 
-    const newOutfit: Outfit = {
-      id: Date.now().toString(),
-      title: outfitTitle.trim(),
-      description: outfitDescription.trim(),
-      items: selectedItems,
-      thumbnail: selectedItems[0].image,
-      createdAt: new Date().toISOString()
-    }
-
     try {
-      onSaveOutfit(newOutfit)
+      const token = localStorage.getItem('authToken')
+      if (!token) {
+        alert('Please log in to save outfits')
+        return
+      }
+
+     
+      const outfitData = {
+        title: outfitTitle.trim(),
+        description: outfitDescription.trim(),
+        items: selectedItems.map(item => item.id), 
+        category: 'Casual', 
+        tags: [], 
+      }
+
+      console.log('Saving outfit to database:', outfitData)
+
       
-      setOutfitTitle('')
-      setOutfitDescription('')
-      setSelectedItems([])
-      onClose()
+      const response = await fetch(`${API_URL}/api/auth/outfits/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(outfitData)
+      })
+
+      if (response.ok) {
+        const savedOutfit = await response.json()
+        console.log('Outfit saved successfully:', savedOutfit)
+        
+       
+        const localOutfit: Outfit = {
+          id: savedOutfit.id.toString(),
+          title: savedOutfit.title,
+          description: savedOutfit.description,
+          items: selectedItems, 
+          thumbnail: selectedItems[0].image,
+          createdAt: savedOutfit.created_at || new Date().toISOString(),
+          isFavorite: savedOutfit.is_favorite || false
+        }
+
+      
+        onSaveOutfit(localOutfit)
+        
+       
+        setOutfitTitle('')
+        setOutfitDescription('')
+        setSelectedItems([])
+        onClose()
+        
+        alert('Outfit saved successfully! 🎉')
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to save outfit:', errorData)
+        alert('Failed to save outfit to database. Please try again.')
+      }
     } catch (error) {
       console.error('Error saving outfit:', error)
-      alert('Failed to save outfit. Please try again.')
+      alert('Error saving outfit. Please try again.')
     } finally {
       setIsSaving(false)
     }
