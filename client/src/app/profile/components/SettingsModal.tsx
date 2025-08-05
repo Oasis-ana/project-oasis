@@ -144,27 +144,28 @@ export default function SettingsModal({
     fileInputRef.current?.click()
   }
 
-  const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('authToken')
-      if (token) {
-        // FIXED: Use environment variable instead of hardcoded localhost
-        await fetch(`${API_URL}/api/auth/logout/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Token ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
-      }
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
-      localStorage.removeItem('authToken')
-      localStorage.removeItem('username')
-      localStorage.removeItem('userProfile')
-      localStorage.removeItem('savedOutfits')
-      window.location.href = '/login'
+  // Optimized fast logout function
+  const handleLogout = () => {
+    // Clear all auth data immediately
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('username')
+    localStorage.removeItem('userProfile')
+    localStorage.removeItem('savedOutfits')
+    sessionStorage.clear()
+    
+    // Redirect immediately without waiting
+    window.location.href = '/login'
+    
+    // Optional: Fire-and-forget logout API call (don't wait for it)
+    const token = localStorage.getItem('authToken')
+    if (token) {
+      fetch(`${API_URL}/api/auth/logout/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }).catch(() => {}) // Ignore errors since user is already logged out
     }
   }
 
