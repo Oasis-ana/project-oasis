@@ -1084,13 +1084,14 @@ export default function ClosetPage() {
                             <Star className={`w-4 h-4 ${item.isFavorite ? 'fill-current' : ''}`} />
                           </button>
                           
+                          {/* Updated hover overlay buttons to match exact style */}
                           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all flex space-x-3">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 handleOpenItemDetails(item)
                               }}
-                              className="p-2 bg-blue-500/90 text-white rounded-full hover:bg-blue-600 transition-colors"
+                              className="p-2 bg-white text-black rounded-full hover:bg-gray-50 transition-colors shadow-lg"
                               title="Edit item"
                             >
                               <Edit className="w-5 h-5" />
@@ -1101,7 +1102,7 @@ export default function ClosetPage() {
                                 e.stopPropagation()
                                 handleDeleteItem(item)
                               }}
-                              className="p-2 bg-red-500/90 text-white rounded-full hover:bg-red-600 transition-colors"
+                              className="p-2 bg-white text-red-500 rounded-full hover:bg-gray-50 transition-colors shadow-lg"
                               title="Delete item"
                             >
                               <Trash2 className="w-5 h-5" />
