@@ -23,11 +23,12 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
       onClick={() => onClick(outfit)}
     >
       
-      <div className="relative bg-gray-100">
+      {/* This container enforces a 3/4 aspect ratio for a uniform grid. */}
+      <div className="relative w-full aspect-[3/4] bg-gray-100">
+        {/* Loading Skeleton */}
         {!imageLoaded && !imageError && (
           <div 
             className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200"
-            style={{ height: '320px', aspectRatio: '3/4' }}
           >
             <div className="flex flex-col items-center space-y-2">
               <div className="w-6 h-6 border-2 border-gray-300 border-t-[#0B2C21] rounded-full animate-spin"></div>
@@ -36,10 +37,10 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
           </div>
         )}
 
+        {/* Error Placeholder */}
         {imageError && (
           <div 
-            className="flex items-center justify-center bg-gray-200 text-gray-600"
-            style={{ height: '320px', aspectRatio: '3/4' }}
+            className="absolute inset-0 flex items-center justify-center bg-gray-200 text-gray-600"
           >
             <div className="text-center p-4">
               <div className="text-2xl mb-2">📷</div>
@@ -48,13 +49,13 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
           </div>
         )}
 
+        {/* The Image - object-cover will fill the space, cropping if necessary. */}
         <img
           src={outfit.image}
           alt={outfit.title}
-          className={`w-full h-80 object-cover object-center transition-opacity duration-300 ${
+          className={`w-full h-full object-cover object-center transition-opacity duration-300 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
-          style={{ aspectRatio: '3/4' }}
           onLoad={() => {
             setImageLoaded(true)
             setImageError(false)
@@ -67,6 +68,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
           decoding="async"
         />
 
+        {/* Overlays - Time and Like button */}
         {imageLoaded && (
           <>
             <div className="absolute top-3 left-3 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-xs font-medium">
@@ -86,7 +88,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
         )}
       </div>
 
-      {/* Content */}
+      {/* Content Below Image */}
       <div className="p-4">
         <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2" style={{ fontFamily: 'Playfair Display, serif' }}>
           {outfit.title}
@@ -120,7 +122,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
         </span>
       </div>
 
-      {/* Edit and Delete buttons */}
+      {/* Hover Actions - Edit and Delete */}
       {imageLoaded && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <button
