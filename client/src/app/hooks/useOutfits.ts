@@ -57,6 +57,7 @@ export function useOutfits() {
       if (response.ok) {
         const newOutfit = await response.json()
         console.log('✅ Upload successful, adding to list')
+        // Add the new outfit to the top of the list
         setOutfits(prev => [newOutfit, ...prev])
         return newOutfit
       } else {
@@ -107,29 +108,48 @@ export function useOutfits() {
     }
   }
 
+  // ==================================================================
+  // THIS IS THE CORRECTED DELETE FUNCTION
+  // ==================================================================
   const deleteOutfit = async (outfitId: string): Promise<boolean> => {
-    const token = localStorage.getItem('authToken')
-    if (!token) return false
+    // 1. Back up the current state in case we need to revert.
+    const originalOutfits = [...outfits];
+
+    // 2. Immediately remove the outfit from the UI (Optimistic Update).
+    setOutfits(prev => prev.filter(o => o.id !== outfitId));
+    
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      // If there's no token, revert the change immediately.
+      setOutfits(originalOutfits);
+      return false;
+    }
     
     try {
-      console.log('🗑️ Deleting outfit...', outfitId)
+      console.log('🗑️ Deleting outfit...', outfitId);
       
+      // 3. Send the delete request to the server.
       const response = await fetch(`${API_URL}/api/auth/outfits/${outfitId}/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Token ${token}` },
-      })
+      });
       
       if (response.status === 204 || response.ok) {
-        console.log('✅ Delete successful')
-        setOutfits(prev => prev.filter(o => o.id !== outfitId))
-        return true
+        // 4a. Success! The optimistic update was correct.
+        console.log('✅ Delete successful on server');
+        return true;
       }
       
-      console.error('❌ Delete failed:', response.status)
-      return false
+      // 4b. If the API fails, revert the optimistic update.
+      console.error('❌ Delete failed on server, reverting UI:', response.status);
+      setOutfits(originalOutfits);
+      return false;
+
     } catch (error) {
-      console.error('💥 Error deleting outfit:', error)
-      return false
+      // 4c. If there's a network error, also revert the optimistic update.
+      console.error('💥 Error deleting outfit, reverting UI:', error);
+      setOutfits(originalOutfits);
+      return false;
     }
   }
 
