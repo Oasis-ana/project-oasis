@@ -17,13 +17,28 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
 
+  // This function now safely handles cases where 'tags' might be a string or an array,
+  // preventing the TypeScript error.
+  const getTagsArray = () => {
+    const tags: any = outfit.tags; // Safely treat tags as 'any' type for this check
+
+    if (Array.isArray(tags)) {
+      return tags; // It's already an array, use it directly
+    }
+    if (typeof tags === 'string' && tags.length > 0) {
+      return tags.split(',').map(tag => tag.trim()); // It's a string, so we split it
+    }
+    return []; // It's empty or in a format we don't recognize
+  }
+  const tagsArray = getTagsArray();
+
   return (
     <div
       className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer transform hover:scale-[1.02] duration-300 relative group"
       onClick={() => onClick(outfit)}
     >
       
-      {/* This container enforces a 3/4 aspect ratio for a uniform grid. */}
+      {/* This container enforces a 3/4 aspect ratio. Padding has been removed to "zoom in" slightly. */}
       <div className="relative w-full aspect-[3/4] bg-gray-100">
         {/* Loading Skeleton */}
         {!imageLoaded && !imageError && (
@@ -49,11 +64,11 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
           </div>
         )}
 
-        {/* The Image - object-cover will fill the space, cropping if necessary. */}
+        {/* The Image - object-contain ensures the entire image is visible */}
         <img
           src={outfit.image}
           alt={outfit.title}
-          className={`w-full h-full object-cover object-center transition-opacity duration-300 ${
+          className={`w-full h-full object-contain object-center transition-opacity duration-300 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           onLoad={() => {
@@ -100,8 +115,9 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
           </p>
         )}
         
+        {/* Use the new tagsArray here */}
         <div className="flex flex-wrap gap-1 mb-2">
-          {outfit.tags?.slice(0, 2).map((tag, index) => (
+          {tagsArray.slice(0, 2).map((tag, index) => (
             <span
               key={index}
               className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
@@ -110,9 +126,9 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
               #{tag}
             </span>
           ))}
-          {outfit.tags && outfit.tags.length > 2 && (
+          {tagsArray.length > 2 && (
             <span className="text-xs text-gray-500">
-              +{outfit.tags.length - 2} more
+              +{tagsArray.length - 2} more
             </span>
           )}
         </div>
