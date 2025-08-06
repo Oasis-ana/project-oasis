@@ -2,12 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Outfit } from '../types/outfit'
+// Optional: Uncomment if you add compression
+// import imageCompression from 'browser-image-compression'
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
 
 export function useOutfits() {
   const [outfits, setOutfits] = useState<Outfit[]>([])
   const [isLoadingOutfits, setIsLoadingOutfits] = useState(true)
+  const [isUploading, setIsUploading] = useState(false) // Optional: for showing upload state
 
   const fetchOutfits = useCallback(async (skipLoading = false) => {
     if (!skipLoading) {
@@ -44,16 +47,28 @@ export function useOutfits() {
   const addOutfit = async (formData: FormData): Promise<Outfit | null> => {
     const token = localStorage.getItem('authToken')
     if (!token) return null
-    
+
+    // Optional: compress image before appending
+    // const file = formData.get('image') as File
+    // if (file) {
+    //   const compressed = await imageCompression(file, {
+    //     maxSizeMB: 1,
+    //     maxWidthOrHeight: 1200,
+    //     useWebWorker: true,
+    //   })
+    //   formData.set('image', compressed)
+    // }
+
+    setIsUploading(true)
+
     try {
       console.log('🚀 Starting outfit upload...')
-      
       const response = await fetch(`${API_URL}/api/auth/outfits/`, {
         method: 'POST',
         headers: { 'Authorization': `Token ${token}` },
         body: formData,
       })
-      
+
       if (response.ok) {
         const newOutfit = await response.json()
         console.log('✅ Upload successful, adding to list')
@@ -67,6 +82,8 @@ export function useOutfits() {
     } catch (error) {
       console.error('💥 Network error during upload:', error)
       return null
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -84,7 +101,7 @@ export function useOutfits() {
 
     try {
       console.log('🔄 Updating outfit...', outfitId)
-      
+
       const response = await fetch(`${API_URL}/api/auth/outfits/${outfitId}/`, {
         method: 'PATCH',
         headers,
@@ -110,43 +127,40 @@ export function useOutfits() {
   const deleteOutfit = async (outfitId: string): Promise<boolean> => {
     const token = localStorage.getItem('authToken')
     if (!token) return false
-    
-    // Optimistically remove the outfit from UI immediately
+
     const previousOutfits = outfits
     setOutfits(prev => prev.filter(o => o.id !== outfitId))
-    
+
     try {
       console.log('🗑️ Deleting outfit...', outfitId)
-      
+
       const response = await fetch(`${API_URL}/api/auth/outfits/${outfitId}/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Token ${token}` },
       })
-      
-      if (response.ok || response.status === 404) {
-        console.log('✅ Delete confirmed')
+
+      if ([200, 204, 404].includes(response.status)) {
+        console.log('✅ Delete confirmed:', response.status)
         return true
       } else {
-        console.error('❌ Delete failed:', response.status)
-        // Revert the optimistic update
+        const errorText = await response.text()
+        console.error('❌ Delete failed:', response.status, errorText)
         setOutfits(previousOutfits)
         return false
       }
     } catch (error) {
       console.error('💥 Error deleting outfit:', error)
-      // Revert the optimistic update
       setOutfits(previousOutfits)
       return false
     }
   }
 
   const handleLike = async (outfitId: string) => {
-    // Optimistically update the UI for a snappy feel
     setOutfits(prev => prev.map(o => o.id === outfitId ? { ...o, liked: !o.liked } : o))
-    
+
     const token = localStorage.getItem('authToken')
     if (!token) return
-    
+
     try {
       const response = await fetch(`${API_URL}/api/auth/outfits/${outfitId}/like/`, {
         method: 'POST',
@@ -155,15 +169,22 @@ export function useOutfits() {
 
       if (!response.ok) {
         console.log('❌ Like failed, reverting...')
-        // If the server fails, revert the change
         setOutfits(prev => prev.map(o => o.id === outfitId ? { ...o, liked: !o.liked } : o))
       }
     } catch (error) {
       console.error('💥 Error liking outfit:', error)
-      // Revert on network error as well
       setOutfits(prev => prev.map(o => o.id === outfitId ? { ...o, liked: !o.liked } : o))
     }
   }
 
-  return { outfits, isLoadingOutfits, fetchOutfits, handleLike, addOutfit, updateOutfit, deleteOutfit }
+  return {
+    outfits,
+    isLoadingOutfits,
+    isUploading,
+    fetchOutfits,
+    addOutfit,
+    updateOutfit,
+    deleteOutfit,
+    handleLike,
+  }
 }
