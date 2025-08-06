@@ -9,25 +9,29 @@ export function useOutfits() {
   const [outfits, setOutfits] = useState<Outfit[]>([])
   const [isLoadingOutfits, setIsLoadingOutfits] = useState(true)
 
-  const fetchOutfits = useCallback(async () => {
-    setIsLoadingOutfits(true)
+  const fetchOutfits = useCallback(async (skipLoading = false) => {
+    if (!skipLoading) {
+      setIsLoadingOutfits(true)
+    }
     const token = localStorage.getItem('authToken')
     if (!token) {
       setIsLoadingOutfits(false)
       return
     }
     try {
+      console.log('📥 Fetching outfits...')
       const response = await fetch(`${API_URL}/api/auth/outfits/`, {
         headers: { 'Authorization': `Token ${token}` },
       })
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ Fetched', data.length, 'outfits')
         setOutfits(data)
       } else {
-        console.error('Failed to fetch outfits')
+        console.error('❌ Failed to fetch outfits:', response.status)
       }
     } catch (error) {
-      console.error('Error fetching outfits:', error)
+      console.error('💥 Error fetching outfits:', error)
     } finally {
       setIsLoadingOutfits(false)
     }
@@ -40,22 +44,28 @@ export function useOutfits() {
   const addOutfit = async (formData: FormData): Promise<Outfit | null> => {
     const token = localStorage.getItem('authToken')
     if (!token) return null
+    
     try {
+      console.log('🚀 Starting outfit upload...')
+      
       const response = await fetch(`${API_URL}/api/auth/outfits/`, {
         method: 'POST',
         headers: { 'Authorization': `Token ${token}` },
         body: formData,
       })
+      
       if (response.ok) {
         const newOutfit = await response.json()
+        console.log('✅ Upload successful, adding to list')
         setOutfits(prev => [newOutfit, ...prev])
         return newOutfit
       } else {
-        console.error('Failed to add outfit:', response.status, await response.text())
+        const errorText = await response.text()
+        console.error('❌ Upload failed:', response.status, errorText)
         return null
       }
     } catch (error) {
-      console.error('Error adding outfit:', error)
+      console.error('💥 Network error during upload:', error)
       return null
     }
   }
@@ -64,7 +74,6 @@ export function useOutfits() {
     const token = localStorage.getItem('authToken')
     if (!token) return null
 
-    // Determine headers based on whether we're sending a file or just text
     const isFormData = data instanceof FormData;
     const headers: HeadersInit = {
       'Authorization': `Token ${token}`,
@@ -74,24 +83,26 @@ export function useOutfits() {
     }
 
     try {
+      console.log('🔄 Updating outfit...', outfitId)
+      
       const response = await fetch(`${API_URL}/api/auth/outfits/${outfitId}/`, {
-        method: 'PATCH', // Use PATCH for partial updates to be more efficient
+        method: 'PATCH',
         headers,
         body: isFormData ? data : JSON.stringify(data),
       })
 
       if (response.ok) {
         const updatedOutfit = await response.json()
+        console.log('✅ Update successful')
         setOutfits(prev => prev.map(o => (o.id === outfitId ? updatedOutfit : o)))
         return updatedOutfit
       } else {
-        console.error('Failed to update outfit:', response.status)
         const errorText = await response.text()
-        console.error('Error response:', errorText)
+        console.error('❌ Update failed:', response.status, errorText)
         return null
       }
     } catch (error) {
-      console.error('Error updating outfit:', error)
+      console.error('💥 Error updating outfit:', error)
       return null
     }
   }
@@ -99,18 +110,25 @@ export function useOutfits() {
   const deleteOutfit = async (outfitId: string): Promise<boolean> => {
     const token = localStorage.getItem('authToken')
     if (!token) return false
+    
     try {
+      console.log('🗑️ Deleting outfit...', outfitId)
+      
       const response = await fetch(`${API_URL}/api/auth/outfits/${outfitId}/`, {
         method: 'DELETE',
         headers: { 'Authorization': `Token ${token}` },
       })
+      
       if (response.status === 204 || response.ok) {
+        console.log('✅ Delete successful')
         setOutfits(prev => prev.filter(o => o.id !== outfitId))
         return true
       }
+      
+      console.error('❌ Delete failed:', response.status)
       return false
     } catch (error) {
-      console.error('Error deleting outfit:', error)
+      console.error('💥 Error deleting outfit:', error)
       return false
     }
   }
@@ -121,6 +139,7 @@ export function useOutfits() {
     
     const token = localStorage.getItem('authToken')
     if (!token) return
+    
     try {
       const response = await fetch(`${API_URL}/api/auth/outfits/${outfitId}/like/`, {
         method: 'POST',
@@ -128,11 +147,12 @@ export function useOutfits() {
       })
 
       if (!response.ok) {
+        console.log('❌ Like failed, reverting...')
         // If the server fails, revert the change
         setOutfits(prev => prev.map(o => o.id === outfitId ? { ...o, liked: !o.liked } : o))
       }
     } catch (error) {
-      console.error('Error liking outfit:', error)
+      console.error('💥 Error liking outfit:', error)
       // Revert on network error as well
       setOutfits(prev => prev.map(o => o.id === outfitId ? { ...o, liked: !o.liked } : o))
     }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Heart, Edit, Trash2 } from 'lucide-react'
+import { Heart, Edit, Trash2, MoreVertical } from 'lucide-react'
 import { Outfit } from '../../types/outfit'
 
 interface OutfitCardProps {
@@ -16,6 +16,7 @@ interface OutfitCardProps {
 export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, formatTimePosted }: OutfitCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [showMobileActions, setShowMobileActions] = useState(false)
 
   // This function now safely handles cases where 'tags' might be a string or an array,
   // preventing the TypeScript error.
@@ -32,9 +33,14 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
   }
   const tagsArray = getTagsArray();
 
+  const handleMobileMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowMobileActions(!showMobileActions)
+  }
+
   return (
     <div
-      className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer transform hover:scale-[1.02] duration-300 relative group"
+      className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-xl transition-all cursor-pointer transform hover:scale-[1.02] active:scale-[0.98] duration-300 relative group touch-manipulation"
       onClick={() => onClick(outfit)}
     >
       
@@ -86,7 +92,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
         {/* Overlays - Time and Like button */}
         {imageLoaded && (
           <>
-            <div className="absolute top-3 left-3 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-xs font-medium">
+            <div className="absolute top-2 lg:top-3 left-2 lg:left-3 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-xs font-medium">
               {formatTimePosted(outfit.created_at)}
             </div>
             
@@ -95,27 +101,74 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
                 e.stopPropagation()
                 onLike(outfit.id)
               }}
-              className="absolute top-3 right-3 p-2 bg-white bg-opacity-90 hover:bg-white rounded-full transition-all shadow-md hover:shadow-lg"
+              className="absolute top-2 lg:top-3 right-2 lg:right-3 p-2 bg-white bg-opacity-90 hover:bg-white active:bg-white rounded-full transition-all shadow-md hover:shadow-lg touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
             >
               <Heart className={`w-4 h-4 ${outfit.liked ? 'text-red-500 fill-current' : 'text-gray-600 hover:text-red-500'}`} />
             </button>
+
+            {/* Mobile Actions Menu Button */}
+            <button
+              onClick={handleMobileMenuToggle}
+              className="absolute bottom-2 right-2 p-2 bg-white bg-opacity-90 hover:bg-white active:bg-white rounded-full transition-all shadow-md touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center lg:hidden"
+            >
+              <MoreVertical className="w-4 h-4 text-gray-600" />
+            </button>
+
+            {/* Mobile Actions Menu */}
+            {showMobileActions && (
+              <div className="absolute bottom-12 right-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 lg:hidden">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEdit(outfit)
+                    setShowMobileActions(false)
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 active:bg-gray-100 w-full text-left touch-manipulation"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete(outfit)
+                    setShowMobileActions(false)
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-gray-100 active:bg-gray-100 w-full text-left touch-manipulation"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
+            )}
+
+            {/* Overlay to close mobile menu when clicking elsewhere */}
+            {showMobileActions && (
+              <div
+                className="fixed inset-0 z-10 lg:hidden"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowMobileActions(false)
+                }}
+              />
+            )}
           </>
         )}
       </div>
 
-      {/* Content Below Image */}
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2" style={{ fontFamily: 'Playfair Display, serif' }}>
+      {/* Content Below Image - mobile optimized */}
+      <div className="p-3 lg:p-4">
+        <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2 text-sm lg:text-base" style={{ fontFamily: 'Playfair Display, serif' }}>
           {outfit.title}
         </h3>
         
         {outfit.description && (
-          <p className="text-sm text-gray-600 mb-2 line-clamp-2" style={{ fontFamily: 'Inter' }}>
+          <p className="text-xs lg:text-sm text-gray-600 mb-2 line-clamp-2" style={{ fontFamily: 'Inter' }}>
             {outfit.description}
           </p>
         )}
         
-        {/* Use the new tagsArray here */}
+        {/* Tags - mobile responsive */}
         <div className="flex flex-wrap gap-1 mb-2">
           {tagsArray.slice(0, 2).map((tag, index) => (
             <span
@@ -138,9 +191,9 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
         </span>
       </div>
 
-      {/* Hover Actions - Edit and Delete */}
+      {/* Desktop Hover Actions - Edit and Delete (Hidden on mobile) */}
       {imageLoaded && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden lg:flex">
           <button
             onClick={(e) => {
               e.stopPropagation()
