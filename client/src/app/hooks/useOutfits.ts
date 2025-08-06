@@ -119,14 +119,25 @@ export function useOutfits() {
         headers: { 'Authorization': `Token ${token}` },
       })
       
-      if (response.status === 204 || response.ok) {
+      console.log('🔍 Delete response status:', response.status)
+      console.log('🔍 Delete response ok:', response.ok)
+      
+      if (response.ok) {
         console.log('✅ Delete successful')
         setOutfits(prev => prev.filter(o => o.id !== outfitId))
         return true
+      } else {
+        const errorText = await response.text()
+        console.error('❌ Delete failed:', response.status, errorText)
+        
+        if (response.status === 404) {
+          console.log('🤔 Got 404 - item might already be deleted, updating UI anyway')
+          setOutfits(prev => prev.filter(o => o.id !== outfitId))
+          return true
+        }
+        
+        return false
       }
-      
-      console.error('❌ Delete failed:', response.status)
-      return false
     } catch (error) {
       console.error('💥 Error deleting outfit:', error)
       return false
