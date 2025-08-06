@@ -31,6 +31,7 @@ interface User {
 export default function ClosetPage() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+  // --- All your state and hooks remain unchanged ---
   const [user, setUser] = useState<User | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [activeTab, setActiveTab] = useState('My Items')
@@ -76,6 +77,7 @@ export default function ClosetPage() {
   
   const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({})
 
+  // --- All your functions remain unchanged ---
   const showSuccess = (message: string) => {
     setSuccessMessage(message)
     setShowSuccessModal(true)
@@ -828,7 +830,7 @@ export default function ClosetPage() {
   if (!isClient) {
     return (
       <div className="min-h-screen bg-[#F5F3EC] flex">
-        <div className="w-20 bg-[#0B2C21]"></div>
+        {/* Assuming sidebar is hidden during initial load */}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4">
@@ -844,13 +846,11 @@ export default function ClosetPage() {
   return (
     <div className="min-h-screen bg-[#F5F3EC] flex">
       {showSuccessModal && (
-        <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50 p-4">
           <div className="bg-white/95 backdrop-blur-md rounded-lg p-8 shadow-xl border border-white/20 max-w-sm w-full text-center">
             <div className="mb-4">
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+                <Check className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
                 {successMessage}
@@ -868,9 +868,13 @@ export default function ClosetPage() {
         onShowSettings={() => {}}
       />
 
-      <div className="flex-1 ml-20">
-        <div className="flex items-center justify-between p-6">
+      <main className="flex-1 w-full md:ml-20">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 gap-4 border-b border-gray-200/80">
           <div className="relative">
+            {/* This code uses your original inline styles to ensure the hanger's placement
+              and the text's appearance are exactly what you specified. The rest of the
+              page remains responsive for mobile-friendliness.
+            */}
             <h1
               style={{
                 fontFamily: 'Playfair Display, serif',
@@ -898,22 +902,20 @@ export default function ClosetPage() {
             />
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="relative w-full md:w-auto">
               <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search your closet"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-white border-2 border-gray-300 rounded-full py-3 pl-12 pr-4 text-gray-600 focus:outline-none focus:border-gray-400 shadow-md text-sm"
-                style={{ width: '320px' }}
+                className="bg-white border-2 border-gray-300 rounded-full py-3 pl-12 pr-4 text-gray-600 focus:outline-none focus:border-gray-400 shadow-md text-sm w-full md:w-72"
               />
             </div>
-
             <button 
               onClick={openAddItemModal}
-              className="bg-[#0B2C21] text-white px-6 py-3 rounded-full flex items-center space-x-2 hover:opacity-90 shadow-md"
+              className="bg-[#0B2C21] text-white px-6 py-3 rounded-full flex items-center justify-center space-x-2 hover:opacity-90 shadow-md w-full sm:w-auto whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
               <span style={{ fontFamily: 'Inter', fontSize: '14px', fontWeight: '500' }}>
@@ -923,13 +925,13 @@ export default function ClosetPage() {
           </div>
         </div>
         
-        <div className="px-6 pt-4">
+        <div className="px-4 md:px-6 pt-4">
           <div className="inline-flex bg-white p-1 rounded-full shadow-md">
             {tabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
+                className={`px-4 py-2 sm:px-6 sm:py-3 rounded-full text-sm font-medium transition-all ${
                   activeTab === tab
                     ? 'bg-[#0B2C21] text-white'
                     : 'text-gray-600'
@@ -944,34 +946,34 @@ export default function ClosetPage() {
 
         {activeTab === 'My Items' && (
           <>
-            <div className="px-6 mt-8 mb-8">
-              <div className="grid grid-cols-4 gap-8">
+            <div className="px-4 md:px-6 mt-8 mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-800 mb-2">{totalItems}</div>
-                  <div className="text-gray-600" style={{ fontFamily: 'Inter' }}>Total Items</div>
+                  <div className="text-3xl md:text-4xl font-bold text-gray-800 mb-1">{totalItems}</div>
+                  <div className="text-sm text-gray-600" style={{ fontFamily: 'Inter' }}>Total Items</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-800 mb-2">{recentlyWorn}</div>
-                  <div className="text-gray-600" style={{ fontFamily: 'Inter' }}>Recently Worn</div>
+                  <div className="text-3xl md:text-4xl font-bold text-gray-800 mb-1">{recentlyWorn}</div>
+                  <div className="text-sm text-gray-600" style={{ fontFamily: 'Inter' }}>Recently Worn</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-800 mb-2">{neverWorn}</div>
-                  <div className="text-gray-600" style={{ fontFamily: 'Inter' }}>Never Worn</div>
+                  <div className="text-3xl md:text-4xl font-bold text-gray-800 mb-1">{neverWorn}</div>
+                  <div className="text-sm text-gray-600" style={{ fontFamily: 'Inter' }}>Never Worn</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-800 mb-2">{favorites}</div>
-                  <div className="text-gray-600" style={{ fontFamily: 'Inter' }}>Favorites</div>
+                  <div className="text-3xl md:text-4xl font-bold text-gray-800 mb-1">{favorites}</div>
+                  <div className="text-sm text-gray-600" style={{ fontFamily: 'Inter' }}>Favorites</div>
                 </div>
               </div>
             </div>
 
-            <div className="px-6 mt-4 mb-8">
-              <div className="flex flex-wrap gap-3">
+            <div className="px-4 md:px-6 mt-4 mb-8">
+              <div className="flex overflow-x-auto space-x-3 pb-2">
                 {filters.map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setActiveFilter(filter)}
-                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                    className={`px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                       activeFilter === filter
                         ? 'bg-[#0B2C21] text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -984,7 +986,7 @@ export default function ClosetPage() {
               </div>
             </div>
 
-            <div className="px-6 pb-6">
+            <div className="px-4 md:px-6 pb-6">
               {isLoadingItems ? (
                 <div className="text-center py-8">
                   <div className="w-12 h-12 mx-auto mb-4">
@@ -1003,17 +1005,17 @@ export default function ClosetPage() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-4 gap-4 justify-items-center">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {filteredItems.map((item) => (
                     <div 
                       key={item.id} 
-                      className="bg-white rounded-xl shadow-lg overflow-hidden group relative cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 ease-in-out w-full max-w-xs"
+                      className="bg-white rounded-xl shadow-lg overflow-hidden group relative cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 ease-in-out w-full"
                     >
                       <div
                         onClick={() => handleOpenItemDetails(item)}
                         className="cursor-pointer"
                       >
-                        <div className="relative h-80 bg-gray-50 overflow-hidden">
+                        <div className="relative h-64 sm:h-80 bg-gray-50 overflow-hidden">
                           <div className="absolute inset-0 flex items-center justify-center">
                             {item.image ? (
                               <>
@@ -1084,7 +1086,6 @@ export default function ClosetPage() {
                             <Star className={`w-4 h-4 ${item.isFavorite ? 'fill-current' : ''}`} />
                           </button>
                           
-                          {/* Updated hover overlay buttons to match exact style */}
                           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all flex space-x-3">
                             <button
                               onClick={(e) => {
@@ -1110,16 +1111,16 @@ export default function ClosetPage() {
                           </div>
                         </div>
 
-                        <div className="p-4 bg-white">
-                          <h3 className="font-semibold text-gray-800 mb-2 text-lg truncate" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        <div className="p-3">
+                          <h3 className="font-semibold text-gray-800 mb-1 text-base truncate" style={{ fontFamily: 'Playfair Display, serif' }}>
                             {item.name}
                           </h3>
                           
-                          <p className="text-sm text-gray-600 mb-3" style={{ fontFamily: 'Inter' }}>
+                          <p className="text-xs text-gray-600 mb-2" style={{ fontFamily: 'Inter' }}>
                             {item.brand} • Size {item.size} • {item.color}
                           </p>
                           
-                          <div className="flex flex-wrap gap-2 mb-3">
+                          <div className="flex flex-wrap gap-1 mb-3">
                             {item.tags.slice(0, 2).map((tag, index) => (
                               <span
                                 key={index}
@@ -1162,7 +1163,7 @@ export default function ClosetPage() {
 
         {activeTab === 'Browse Catalog' && (
           <>
-            <div className="px-6 mt-8 mb-6">
+            <div className="px-4 md:px-6 mt-8 mb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
                 Browse Wardrobe Essentials
               </h2>
@@ -1171,13 +1172,13 @@ export default function ClosetPage() {
               </p>
             </div>
 
-            <div className="px-6 pb-6">
-              <div className="flex flex-wrap gap-3 mb-8">
+            <div className="px-4 md:px-6 pb-6">
+              <div className="flex overflow-x-auto space-x-3 pb-2 mb-8">
                 {filters.map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setActiveFilter(filter)}
-                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                    className={`px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                       activeFilter === filter
                         ? 'bg-[#0B2C21] text-white'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -1189,7 +1190,7 @@ export default function ClosetPage() {
                 ))}
               </div>
               
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {getCatalogFilteredItems().map(item => (
                   <div key={item.id} className="relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                     <div className="relative">
@@ -1247,7 +1248,7 @@ export default function ClosetPage() {
             </div>
           </>
         )}
-      </div>
+      </main>
 
       {showAddItemModal && (
         <AddItemModal
@@ -1264,7 +1265,6 @@ export default function ClosetPage() {
         />
       )}
 
-      {/* This input element is now correctly referenced by the modal */}
       <input
         ref={fileInputRef}
         type="file"
@@ -1284,8 +1284,8 @@ export default function ClosetPage() {
       )}
 
       {showUrlModal && selectedCatalogItem && (
-        <div className="fixed inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center z-50">
-          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-6 w-96 shadow-2xl border border-white/30 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-6 w-full max-w-md shadow-2xl border border-white/30 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Playfair Display, serif' }}>
                 Add {selectedCatalogItem.name}
@@ -1400,8 +1400,8 @@ export default function ClosetPage() {
       />
 
       {showDeleteModal && itemToDelete && (
-        <div className="fixed inset-0 backdrop-blur-md bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 shadow-2xl">
+        <div className="fixed inset-0 backdrop-blur-md bg-black/30 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-2xl">
             <h3 className="text-xl font-bold mb-4 text-gray-900" style={{ fontFamily: 'Playfair Display, serif' }}>
               Delete Item
             </h3>
