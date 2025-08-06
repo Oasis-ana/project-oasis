@@ -32,7 +32,6 @@ export default function HomePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [tabToDelete, setTabToDelete] = useState('')
   const [newTabName, setNewTabName] = useState('')
-  const [defaultTabs, setDefaultTabs] = useState<string[]>(['Work', 'Date Night'])
   const [customTabs, setCustomTabs] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState('All Outfits')
   const [isClient, setIsClient] = useState(false)
@@ -68,7 +67,8 @@ export default function HomePage() {
 
   const baseCategories = ['Casual', 'Work', 'Date Night', 'Formal', 'Party', 'Weekend', 'Travel', 'Sport']
   
-  const allCategories = Array.from(new Set([...baseCategories, ...defaultTabs, ...customTabs]));
+  // Updated: Only use custom tabs, no default tabs
+  const allCategories = Array.from(new Set([...baseCategories, ...customTabs]));
 
   const getErrorMessage = (error: unknown): string => {
     if (error instanceof Error) return error.message
@@ -116,21 +116,13 @@ export default function HomePage() {
       }
     }
 
+    // Only load custom tabs, no default tabs
     const savedTabs = localStorage.getItem('customTabs')
     if (savedTabs) {
       try {
         setCustomTabs(JSON.parse(savedTabs))
       } catch (e) {
         console.error('Error parsing custom tabs:', e)
-      }
-    }
-
-    const savedDefaultTabs = localStorage.getItem('defaultTabs')
-    if (savedDefaultTabs) {
-      try {
-        setDefaultTabs(JSON.parse(savedDefaultTabs))
-      } catch (e) {
-        console.error('Error parsing default tabs:', e)
       }
     }
 
@@ -194,7 +186,8 @@ export default function HomePage() {
     })
   }
 
-  const tabs = ['All Outfits', 'Favorites', ...defaultTabs, ...customTabs, 'Calendar', '+ Add Tab']
+  // Updated: Custom tabs go between Calendar and + Add Tab
+  const tabs = ['All Outfits', 'Favorites', 'Calendar', ...customTabs, '+ Add Tab']
   
   // FIXED: Filter out Profile outfits (category 'Saved') from OOTD page
   const tabFilteredOutfits = activeTab === 'All Outfits' 
@@ -233,7 +226,7 @@ export default function HomePage() {
 
     const tabName = newTabName.trim()
     
-    if (['All Outfits', 'Favorites', 'Calendar', ...defaultTabs, ...customTabs].includes(tabName)) {
+    if (['All Outfits', 'Favorites', 'Calendar', ...customTabs].includes(tabName)) {
       alert('This tab already exists!')
       return
     }
@@ -248,7 +241,7 @@ export default function HomePage() {
   }
 
   const handleDeleteTab = (tabToDelete: string) => {
-    // Note: The logic inside the button already prevents this, but this is a good safeguard
+    // Only allow deletion of custom tabs
     if (['All Outfits', 'Favorites', 'Calendar', '+ Add Tab'].includes(tabToDelete)) return
     
     setTabToDelete(tabToDelete)
@@ -256,15 +249,10 @@ export default function HomePage() {
   }
 
   const confirmDeleteTab = () => {
-    if (defaultTabs.includes(tabToDelete)) {
-      const updatedDefaultTabs = defaultTabs.filter(tab => tab !== tabToDelete)
-      setDefaultTabs(updatedDefaultTabs)
-      localStorage.setItem('defaultTabs', JSON.stringify(updatedDefaultTabs))
-    } else {
-      const updatedCustomTabs = customTabs.filter(tab => tab !== tabToDelete)
-      setCustomTabs(updatedCustomTabs)
-      localStorage.setItem('customTabs', JSON.stringify(updatedCustomTabs))
-    }
+    // Only delete from custom tabs
+    const updatedCustomTabs = customTabs.filter(tab => tab !== tabToDelete)
+    setCustomTabs(updatedCustomTabs)
+    localStorage.setItem('customTabs', JSON.stringify(updatedCustomTabs))
     
     if (activeTab === tabToDelete) {
       setActiveTab('All Outfits')
@@ -300,7 +288,7 @@ export default function HomePage() {
   const handleLogTodaysLook = () => {
     resetOutfitForm()
     setShowCreateOutfitModal(true)
-    if (activeTab !== 'All Outfits' && activeTab !== 'Calendar') {
+    if (activeTab !== 'All Outfits' && activeTab !== 'Calendar' && activeTab !== 'Favorites') {
       setOutfitData(prev => ({ ...prev, category: activeTab }))
     } else {
       setOutfitData(prev => ({ ...prev, category: baseCategories[0] }))
@@ -645,7 +633,6 @@ export default function HomePage() {
           <div className="px-6 pt-4">
             <div className="flex flex-wrap gap-3 mb-6">
                 {tabs.map((tab) => {
-                    // --- ONLY CHANGE: ADDED 'Calendar' TO THIS LINE ---
                     const isSpecialTab = tab === 'All Outfits' || tab === 'Favorites' || tab === 'Calendar' || tab === '+ Add Tab'
                     const isSelected = activeTab === tab
                     let tabClasses = `flex items-center space-x-1 px-4 py-3 rounded-lg text-sm font-medium transition-all group `
