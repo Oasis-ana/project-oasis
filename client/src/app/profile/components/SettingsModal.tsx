@@ -22,7 +22,6 @@ interface SettingsModalProps {
   isOfflineMode?: boolean
 }
 
-// Add API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
 
 export default function SettingsModal({ 
@@ -97,7 +96,6 @@ export default function SettingsModal({
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}`,
-          // Don't set Content-Type - let browser handle it for FormData
         },
         body: formData
       })
@@ -144,19 +142,15 @@ export default function SettingsModal({
     fileInputRef.current?.click()
   }
 
-  // Optimized fast logout function
   const handleLogout = () => {
-    // Clear all auth data immediately
     localStorage.removeItem('authToken')
     localStorage.removeItem('username')
     localStorage.removeItem('userProfile')
     localStorage.removeItem('savedOutfits')
     sessionStorage.clear()
     
-    // Redirect immediately without waiting
     window.location.href = '/login'
     
-    // Optional: Fire-and-forget logout API call (don't wait for it)
     const token = localStorage.getItem('authToken')
     if (token) {
       fetch(`${API_URL}/api/auth/logout/`, {
@@ -165,7 +159,7 @@ export default function SettingsModal({
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
         }
-      }).catch(() => {}) // Ignore errors since user is already logged out
+      }).catch(() => {})
     }
   }
 
@@ -196,8 +190,8 @@ export default function SettingsModal({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     
     if (!validateForm()) {
       return
@@ -227,7 +221,6 @@ export default function SettingsModal({
         updateData.new_password = settingsForm.newPassword
       }
 
-      // FIXED: Use environment variable instead of hardcoded localhost
       const response = await fetch(`${API_URL}/api/auth/update-profile/`, {
         method: 'PATCH',
         headers: {
@@ -294,39 +287,45 @@ export default function SettingsModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-      <div className="bg-white rounded-lg p-6 w-80 shadow-2xl pointer-events-auto border border-gray-100">
-        <div className="flex justify-between items-center mb-6">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 lg:pointer-events-none">
+      <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-sm lg:w-80 shadow-2xl lg:pointer-events-auto border border-gray-100 max-h-[90vh] overflow-y-auto">
+        {/* Header - improved mobile layout */}
+        <div className="flex justify-between items-center mb-4 lg:mb-6">
           <h2 
-            className="text-xl font-bold text-[#0B2C21]" 
+            className="text-lg lg:text-xl font-bold text-[#0B2C21]" 
             style={{ fontFamily: 'Playfair Display, serif' }}
           >
             Settings
           </h2>
-          <X 
-            className="w-5 h-5 text-[#0B2C21] cursor-pointer hover:opacity-70" 
+          <button
             onClick={onClose}
-          />
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors touch-manipulation"
+            aria-label="Close settings"
+          >
+            <X className="w-5 h-5 text-[#0B2C21]" />
+          </button>
         </div>
 
+        {/* Error message - improved mobile styling */}
         {errors.general && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
             {errors.general}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="text-center mb-4">
-            <div className="relative w-16 h-16 mx-auto mb-2">
+        <div className="space-y-4">
+          {/* Profile picture section - mobile optimized */}
+          <div className="text-center mb-4 lg:mb-6">
+            <div className="relative w-24 h-24 lg:w-16 lg:h-16 mx-auto mb-3">
               {previewImage ? (
                 <img
                   src={previewImage}
                   alt="Profile"
-                  className="w-16 h-16 rounded-full object-cover"
+                  className="w-full h-full rounded-full object-cover"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-orange-400 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-orange-600"></div>
+                <div className="w-full h-full rounded-full bg-orange-400 flex items-center justify-center">
+                  <div className="w-16 h-16 lg:w-12 lg:h-12 rounded-full bg-orange-600"></div>
                 </div>
               )}
               
@@ -334,12 +333,12 @@ export default function SettingsModal({
                 type="button"
                 onClick={triggerFileSelect}
                 disabled={isUploadingImage}
-                className="absolute inset-0 w-16 h-16 rounded-full bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity disabled:opacity-50"
+                className="absolute inset-0 w-full h-full rounded-full bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 active:opacity-100 transition-opacity disabled:opacity-50 touch-manipulation"
               >
                 {isUploadingImage ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <Camera className="w-4 h-4 text-white" />
+                  <Camera className="w-5 h-5 lg:w-4 lg:h-4 text-white" />
                 )}
               </button>
             </div>
@@ -348,7 +347,7 @@ export default function SettingsModal({
               type="button"
               onClick={triggerFileSelect}
               disabled={isUploadingImage}
-              className="text-xs text-[#0B2C21] hover:opacity-70 disabled:opacity-50"
+              className="text-sm text-[#0B2C21] hover:opacity-70 disabled:opacity-50 py-3 lg:py-2 px-4 touch-manipulation min-h-[44px]"
               style={{ fontFamily: 'Inter' }}
             >
               {isUploadingImage ? 'Uploading...' : 'Change Photo'}
@@ -367,13 +366,14 @@ export default function SettingsModal({
             />
           </div>
 
+          {/* Form inputs - mobile optimized */}
           <div>
             <input
               type="text"
               value={settingsForm.username}
               onChange={(e) => setSettingsForm({...settingsForm, username: e.target.value})}
               placeholder="Username"
-              className={`w-full px-3 py-2 bg-gray-50 border-0 rounded text-sm text-black ${
+              className={`w-full px-4 py-3 lg:px-3 lg:py-2 bg-gray-50 border-0 rounded text-base lg:text-sm text-black ${
                 errors.username ? 'bg-red-50' : ''
               }`}
               style={{ fontFamily: 'Inter', color: '#000000' }}
@@ -388,19 +388,20 @@ export default function SettingsModal({
               value={settingsForm.bio}
               onChange={(e) => setSettingsForm({...settingsForm, bio: e.target.value})}
               placeholder="Bio..."
-              rows={2}
-              className="w-full px-3 py-2 bg-gray-50 border-0 rounded text-sm resize-none text-black"
+              rows={3}
+              className="w-full px-4 py-3 lg:px-3 lg:py-2 bg-gray-50 border-0 rounded text-base lg:text-sm resize-none text-black"
               style={{ fontFamily: 'Inter', color: '#000000' }}
             />
           </div>
 
+          {/* Password section - mobile optimized */}
           <div className="space-y-3 pt-2">
             <input
               type="password"
               value={settingsForm.currentPassword}
               onChange={(e) => setSettingsForm({...settingsForm, currentPassword: e.target.value})}
               placeholder="Current password"
-              className={`w-full px-3 py-2 bg-gray-50 border-0 rounded text-sm text-black ${
+              className={`w-full px-4 py-3 lg:px-3 lg:py-2 bg-gray-50 border-0 rounded text-base lg:text-sm text-black ${
                 errors.currentPassword ? 'bg-red-50' : ''
               }`}
               style={{ fontFamily: 'Inter', color: '#000000' }}
@@ -414,7 +415,7 @@ export default function SettingsModal({
               value={settingsForm.newPassword}
               onChange={(e) => setSettingsForm({...settingsForm, newPassword: e.target.value})}
               placeholder="New password"
-              className={`w-full px-3 py-2 bg-gray-50 border-0 rounded text-sm text-black ${
+              className={`w-full px-4 py-3 lg:px-3 lg:py-2 bg-gray-50 border-0 rounded text-base lg:text-sm text-black ${
                 errors.newPassword ? 'bg-red-50' : ''
               }`}
               style={{ fontFamily: 'Inter', color: '#000000' }}
@@ -428,7 +429,7 @@ export default function SettingsModal({
               value={settingsForm.confirmPassword}
               onChange={(e) => setSettingsForm({...settingsForm, confirmPassword: e.target.value})}
               placeholder="Confirm password"
-              className={`w-full px-3 py-2 bg-gray-50 border-0 rounded text-sm text-black ${
+              className={`w-full px-4 py-3 lg:px-3 lg:py-2 bg-gray-50 border-0 rounded text-base lg:text-sm text-black ${
                 errors.confirmPassword ? 'bg-red-50' : ''
               }`}
               style={{ fontFamily: 'Inter', color: '#000000' }}
@@ -438,28 +439,28 @@ export default function SettingsModal({
             )}
           </div>
 
-          <div className="pt-4 space-y-2">
+          {/* Action buttons - mobile optimized */}
+          <div className="pt-4 space-y-3">
             <button
-              type="submit"
+              onClick={handleSubmit}
               disabled={isLoading || isUploadingImage}
-              className="w-full py-2.5 bg-[#0B2C21] text-white text-sm rounded hover:opacity-90 disabled:opacity-50"
+              className="w-full py-3 bg-[#0B2C21] text-white text-base lg:text-sm rounded hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all touch-manipulation min-h-[48px]"
               style={{ fontFamily: 'Inter' }}
             >
               {isLoading ? 'Saving...' : 'Save Changes'}
             </button>
             
             <button
-              type="button"
               onClick={handleLogout}
               disabled={isLoading || isUploadingImage}
-              className="w-full py-2.5 bg-red-600 text-white text-sm rounded hover:opacity-90 disabled:opacity-50 flex items-center justify-center"
+              className="w-full py-3 bg-red-600 text-white text-base lg:text-sm rounded hover:opacity-90 active:scale-95 disabled:opacity-50 flex items-center justify-center transition-all touch-manipulation min-h-[48px]"
               style={{ fontFamily: 'Inter' }}
             >
-              <LogOut className="w-4 h-4 mr-1" />
+              <LogOut className="w-5 h-5 lg:w-4 lg:h-4 mr-2" />
               Logout
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )

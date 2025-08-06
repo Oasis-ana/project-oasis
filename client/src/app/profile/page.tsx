@@ -124,7 +124,7 @@ export default function ProfilePage() {
           description: outfit.description || '',
           items: outfit.items || [],
           thumbnail: (outfit.items && outfit.items[0]) ? outfit.items[0].image : '',
-          createdAt: outfit.created_at,
+          createdAt: outfit.created_at || new Date().toISOString(), // Fallback to current date
           isFavorite: outfit.is_favorite || false
         }));
         setSavedOutfits(transformedOutfits)
@@ -188,7 +188,7 @@ export default function ProfilePage() {
           outfit.id === tempId ? {
             ...outfit,
             id: savedOutfitFromServer.id.toString(), // Use the real ID
-            createdAt: savedOutfitFromServer.created_at // Use the real timestamp
+            createdAt: savedOutfitFromServer.created_at || new Date().toISOString() // Use the real timestamp with fallback
           } : outfit
         )
       )
@@ -201,7 +201,7 @@ export default function ProfilePage() {
     }
   }
   
-  // All other functions and JSX remain the same...
+  // All other functions remain the same...
   const updateUserData = (updatedData: Partial<User>) => {
     setUser(prevUser => {
       if (!prevUser) return null
@@ -266,7 +266,7 @@ export default function ProfilePage() {
   if (!isClient) {
     return (
       <div className="min-h-screen bg-[#F5F3EC] flex">
-        <div className="w-20 bg-[#0B2C21]"></div>
+        <div className="hidden lg:block w-20 bg-[#0B2C21]"></div>
         <div className="flex-1"></div>
       </div>
     )
@@ -279,42 +279,174 @@ export default function ProfilePage() {
       <div className={`min-h-screen bg-[#F5F3EC] flex transition-all duration-200 ${showSettingsModal || showOutfitCreator || showOutfitModal ? 'blur-sm' : ''}`}>
         <Sidebar user={user} onShowSettings={() => setShowSettingsModal(true)} />
         <div className="flex-1">
-          <div className="flex items-center pl-24 pr-6 py-6 space-x-6">
-            <ArrowLeft className="w-6 h-6 text-gray-600 cursor-pointer hover:text-gray-800 transition-colors flex-shrink-0" onClick={handleGoBack} />
+          {/* Header with search - responsive padding and sizing */}
+          <div className="flex items-center pl-4 lg:pl-24 pr-4 lg:pr-6 py-4 lg:py-6 space-x-3 lg:space-x-6">
+            <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-gray-600 cursor-pointer hover:text-gray-800 transition-colors flex-shrink-0" onClick={handleGoBack} />
             <div className="flex-1 relative">
-              <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
-              <input type="text" placeholder="Search your outfits" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-[85%] bg-white border border-gray-300 rounded-full py-3 pl-12 pr-4 text-gray-600 focus:outline-none focus:border-gray-400" />
+              <Search className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400 absolute left-3 lg:left-4 top-1/2 transform -translate-y-1/2" />
+              <input 
+                type="text" 
+                placeholder="Search your outfits" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                className="w-full lg:w-[85%] bg-white border border-gray-300 rounded-full py-2 lg:py-3 pl-10 lg:pl-12 pr-3 lg:pr-4 text-sm lg:text-base text-gray-600 focus:outline-none focus:border-gray-400" 
+              />
             </div>
           </div>
+          
+          {/* Error message - responsive padding */}
           {outfitsError && (
-            <div className="ml-32 mr-12 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mx-4 lg:ml-32 lg:mr-12 mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-700 text-sm" style={{ fontFamily: 'Inter' }}>{outfitsError}</p>
             </div>
           )}
-          <ProfileHeader user={user} triggerFileSelect={triggerFileSelect} fileInputRef={fileInputRef} handleFileSelect={handleFileSelect} setShowOutfitCreator={() => setShowOutfitCreator(true)} setActiveTab={setActiveTab} />
-          <div className="pl-32 pr-12">
+          
+          {/* Profile Header */}
+          <ProfileHeader 
+            user={user} 
+            triggerFileSelect={triggerFileSelect} 
+            fileInputRef={fileInputRef} 
+            handleFileSelect={handleFileSelect} 
+            setShowOutfitCreator={() => setShowOutfitCreator(true)} 
+            setActiveTab={setActiveTab} 
+          />
+          
+          {/* Main content - responsive padding */}
+          <div className="px-4 lg:pl-32 lg:pr-12">
             {activeTab === 'outfits' && (
               <div className="pb-6">
                 {isLoadingOutfits ? (
-                  <div className="text-center py-12"><div className="w-8 h-8 border-4 border-[#0B2C21] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div><p className="text-gray-600" style={{ fontFamily: 'Inter' }}>Loading your outfits...</p></div>
+                  <div className="text-center py-8 lg:py-12">
+                    <div className="w-6 h-6 lg:w-8 lg:h-8 border-4 border-[#0B2C21] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600 text-sm lg:text-base" style={{ fontFamily: 'Inter' }}>Loading your outfits...</p>
+                  </div>
                 ) : filteredOutfits.length === 0 ? (
-                  <div className="text-center py-12"><div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4"><Shirt className="w-8 h-8 text-gray-400" /></div><h3 className="text-lg font-medium text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>No outfits yet</h3><p className="text-gray-600 mb-4" style={{ fontFamily: 'Inter' }}>Create your first outfit to start building your style collection</p></div>
+                  <div className="text-center py-8 lg:py-12">
+                    <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Shirt className="w-6 h-6 lg:w-8 lg:h-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-base lg:text-lg font-medium text-gray-800 mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>No outfits yet</h3>
+                    <p className="text-sm lg:text-base text-gray-600 mb-4 px-4" style={{ fontFamily: 'Inter' }}>Create your first outfit to start building your style collection</p>
+                  </div>
                 ) : (
-                  <div className="grid grid-cols-4 gap-4 justify-items-center">
+                  /* Responsive grid - 1 column on mobile, 2 on sm, 3 on md, 4 on lg+ */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4 justify-items-center">
                     {filteredOutfits.map((outfit) => (
-                      <div key={outfit.id} className="bg-white rounded-xl shadow-lg overflow-hidden group relative cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 ease-in-out w-full max-w-xs" onClick={() => handleViewOutfit(outfit)}>
-                        <div className="relative h-80 bg-gray-50 overflow-hidden">
-                          <div className="absolute inset-0 flex items-center justify-center p-4">
+                      <div 
+                        key={outfit.id} 
+                        className="bg-white rounded-xl shadow-lg overflow-hidden group relative cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 ease-in-out w-full max-w-xs" 
+                        onClick={() => handleViewOutfit(outfit)}
+                      >
+                        {/* Image container - responsive height */}
+                        <div className="relative h-64 sm:h-72 lg:h-80 bg-gray-50 overflow-hidden">
+                          <div className="absolute inset-0 flex items-center justify-center p-3 lg:p-4">
                             {/* The complex image grid logic remains unchanged */}
-                            {outfit.items.length === 1 ? (<div className="w-full h-full max-w-48">{outfit.items[0].image ? (<img src={outfit.items[0].image} alt={outfit.items[0].name} className="w-full h-full object-cover rounded-lg" />) : (<div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg"><Shirt className="w-12 h-12 text-gray-400" /></div>)}</div>) : outfit.items.length === 2 ? (<div className="grid grid-cols-2 gap-3 w-full h-full max-w-64">{outfit.items.slice(0, 2).map((item, index) => (<div key={item.id} className="relative h-full" style={{ transform: `rotate(${index === 0 ? -1 : 1}deg)` }}>{item.image ? (<img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg shadow-sm" />) : (<div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg shadow-sm"><Shirt className="w-8 h-8 text-gray-400" /></div>)}</div>))}</div>) : outfit.items.length === 3 ? (<div className="grid grid-cols-2 gap-3 w-full h-full max-w-72"><div className="relative row-span-2" style={{ transform: 'rotate(-1deg)' }}>{outfit.items[0].image ? (<img src={outfit.items[0].image} alt={outfit.items[0].name} className="w-full h-full object-cover rounded-lg shadow-sm" />) : (<div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg shadow-sm"><Shirt className="w-8 h-8 text-gray-400" /></div>)}</div><div className="grid grid-rows-2 gap-2">{outfit.items.slice(1, 3).map((item, index) => (<div key={item.id} className="relative" style={{ transform: `rotate(${index === 0 ? 2 : -1}deg)` }}>{item.image ? (<img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg shadow-sm" />) : (<div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg shadow-sm"><Shirt className="w-6 h-6 text-gray-400" /></div>)}</div>))}</div></div>) : (<div className="grid grid-cols-2 gap-3 w-full h-full max-w-80">{outfit.items.slice(0, 4).map((item, index) => (<div key={item.id} className="relative" style={{ transform: `rotate(${[-1, 1, -0.5, 0.5][index]}deg)` }}>{item.image ? (<img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg shadow-sm" />) : (<div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg shadow-sm"><Shirt className="w-6 h-6 text-gray-400" /></div>)}{index === 3 && outfit.items.length > 4 && (<div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg"><span className="text-white font-bold text-sm">+{outfit.items.length - 4}</span></div>)}</div>))}</div>)}
+                            {outfit.items.length === 1 ? (
+                              <div className="w-full h-full max-w-40 sm:max-w-44 lg:max-w-48">
+                                {outfit.items[0].image ? (
+                                  <img src={outfit.items[0].image} alt={outfit.items[0].name} className="w-full h-full object-cover rounded-lg" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg">
+                                    <Shirt className="w-10 h-10 lg:w-12 lg:h-12 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                            ) : outfit.items.length === 2 ? (
+                              <div className="grid grid-cols-2 gap-2 lg:gap-3 w-full h-full max-w-56 sm:max-w-60 lg:max-w-64">
+                                {outfit.items.slice(0, 2).map((item, index) => (
+                                  <div key={item.id} className="relative h-full" style={{ transform: `rotate(${index === 0 ? -1 : 1}deg)` }}>
+                                    {item.image ? (
+                                      <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg shadow-sm" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg shadow-sm">
+                                        <Shirt className="w-6 h-6 lg:w-8 lg:h-8 text-gray-400" />
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : outfit.items.length === 3 ? (
+                              <div className="grid grid-cols-2 gap-2 lg:gap-3 w-full h-full max-w-60 sm:max-w-68 lg:max-w-72">
+                                <div className="relative row-span-2" style={{ transform: 'rotate(-1deg)' }}>
+                                  {outfit.items[0].image ? (
+                                    <img src={outfit.items[0].image} alt={outfit.items[0].name} className="w-full h-full object-cover rounded-lg shadow-sm" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg shadow-sm">
+                                      <Shirt className="w-6 h-6 lg:w-8 lg:h-8 text-gray-400" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="grid grid-rows-2 gap-2">
+                                  {outfit.items.slice(1, 3).map((item, index) => (
+                                    <div key={item.id} className="relative" style={{ transform: `rotate(${index === 0 ? 2 : -1}deg)` }}>
+                                      {item.image ? (
+                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg shadow-sm" />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg shadow-sm">
+                                          <Shirt className="w-5 h-5 lg:w-6 lg:h-6 text-gray-400" />
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-2 lg:gap-3 w-full h-full max-w-68 sm:max-w-76 lg:max-w-80">
+                                {outfit.items.slice(0, 4).map((item, index) => (
+                                  <div key={item.id} className="relative" style={{ transform: `rotate(${[-1, 1, -0.5, 0.5][index]}deg)` }}>
+                                    {item.image ? (
+                                      <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-lg shadow-sm" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-lg shadow-sm">
+                                        <Shirt className="w-5 h-5 lg:w-6 lg:h-6 text-gray-400" />
+                                      </div>
+                                    )}
+                                    {index === 3 && outfit.items.length > 4 && (
+                                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+                                        <span className="text-white font-bold text-xs lg:text-sm">+{outfit.items.length - 4}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteOutfit(outfit.id) }} className="absolute top-3 right-3 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10" title="Delete outfit"><X className="w-4 h-4" /></button>
+                          {/* Delete button - responsive size and positioning */}
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleDeleteOutfit(outfit.id) }} 
+                            className="absolute top-2 right-2 lg:top-3 lg:right-3 p-1.5 lg:p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10" 
+                            title="Delete outfit"
+                          >
+                            <X className="w-3 h-3 lg:w-4 lg:h-4" />
+                          </button>
                         </div>
-                        <div className="p-4 bg-white">
-                          <h4 className="text-gray-900 font-semibold text-lg mb-2 truncate" style={{ fontFamily: 'Playfair Display, serif' }}>{outfit.title}</h4>
-                          <div className="mb-3"><span className="inline-block bg-[#0B2C21] text-white text-xs px-3 py-1 rounded-full">{outfit.items.length} items</span></div>
-                          {outfit.description && (<p className="text-sm text-gray-600 line-clamp-2 mb-3" style={{ fontFamily: 'Inter' }}>{outfit.description}</p>)}
-                          <p className="text-xs text-gray-700" style={{ fontFamily: 'Inter' }}>{new Date(outfit.createdAt).toLocaleDateString()}</p>
+                        
+                        {/* Card content - responsive padding and text sizes */}
+                        <div className="p-3 lg:p-4 bg-white">
+                          <h4 className="text-gray-900 font-semibold text-base lg:text-lg mb-2 truncate" style={{ fontFamily: 'Playfair Display, serif' }}>
+                            {outfit.title}
+                          </h4>
+                          <div className="mb-2 lg:mb-3">
+                            <span className="inline-block bg-[#0B2C21] text-white text-xs px-2 lg:px-3 py-1 rounded-full">
+                              {outfit.items.length} items
+                            </span>
+                          </div>
+                          {outfit.description && (
+                            <p className="text-xs lg:text-sm text-gray-600 line-clamp-2 mb-2 lg:mb-3" style={{ fontFamily: 'Inter' }}>
+                              {outfit.description}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-700" style={{ fontFamily: 'Inter' }}>
+                            {(() => {
+                              try {
+                                const date = new Date(outfit.createdAt)
+                                return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString()
+                              } catch (error) {
+                                console.error('Date parsing error:', error, 'for date:', outfit.createdAt)
+                                return 'Invalid Date'
+                              }
+                            })()}
+                          </p>
                         </div>
                       </div>
                     ))}
