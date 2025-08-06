@@ -347,6 +347,9 @@ export default function HomePage() {
     setShowCreateOutfitModal(false);
     setSuccessMessage('Outfit Posted! 🎉');
     resetOutfitForm(); 
+    // FIXED: Reset uploading state when success modal shows
+    setIsUploading(false);
+    setUploadProgress(0);
     setTimeout(() => {
       handleCloseSuccessModal();
     }, 2000);
@@ -394,6 +397,9 @@ export default function HomePage() {
         
         if (!isEditing && currentOutfits.length > previousOutfitCount) {
           console.log('SUCCESS: Outfit count increased!')
+          // FIXED: Reset uploading state before calling handleSuccess
+          setIsUploading(false);
+          setUploadProgress(0);
           handleSuccess('Outfit saved!')
           return
         }
@@ -404,6 +410,9 @@ export default function HomePage() {
         
         if (matchingOutfits.length > 0) {
           console.log('SUCCESS: Found outfit with matching title!')
+          // FIXED: Reset uploading state before calling handleSuccess
+          setIsUploading(false);
+          setUploadProgress(0);
           handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
           return
         }
@@ -415,6 +424,9 @@ export default function HomePage() {
         
         if (veryRecentOutfits.length > 0 && i === maxAttempts - 1) {
           console.log('Found recent outfit on final attempt - assuming success')
+          // FIXED: Reset uploading state before calling handleSuccess
+          setIsUploading(false);
+          setUploadProgress(0);
           handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
           return
         }
@@ -422,6 +434,9 @@ export default function HomePage() {
       
       console.log('Verification inconclusive - treating as potential success')
       
+      // FIXED: Reset uploading state before calling handleSuccess
+      setIsUploading(false);
+      setUploadProgress(0);
       handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
       
       setTimeout(() => {
@@ -433,14 +448,14 @@ export default function HomePage() {
     } catch (err) {
       console.error('Error during verification:', err)
       
+      // FIXED: Reset uploading state before calling handleSuccess
+      setIsUploading(false);
+      setUploadProgress(0);
       handleSuccess(isEditing ? 'Outfit updated!' : 'Outfit saved!')
       
       setTimeout(() => {
         alert('Please refresh the page to see your outfit')
       }, 2000)
-    } finally {
-      setIsUploading(false)
-      setUploadProgress(0)
     }
   }
 
@@ -500,6 +515,9 @@ export default function HomePage() {
       if (success) {
         setUploadProgress(100)
         const message = isEditing ? 'Outfit updated!' : 'Outfit saved!';
+        // FIXED: Reset uploading state immediately on success
+        setIsUploading(false);
+        setUploadProgress(0);
         handleSuccess(message);
       } else {
         console.log('Upload response indicated failure, verifying...')

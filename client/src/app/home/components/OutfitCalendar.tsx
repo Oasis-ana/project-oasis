@@ -1,48 +1,55 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, X, Heart, Calendar, Tag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Heart, Calendar, Tag, Edit, Trash2 } from 'lucide-react';
 import { Outfit } from '../../types/outfit';
 
 interface OutfitCalendarProps {
   outfits: Outfit[];
   isLoading: boolean;
-  onDateClick?: (date: Date, outfit?: Outfit) => void;
+  onDateClick?: (date: Date, outfits?: Outfit[]) => void;
   onLike?: (outfitId: string) => void;
+  onEdit?: (outfit: Outfit) => void;
+  onDelete?: (outfit: Outfit) => void;
 }
 
-export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike }: OutfitCalendarProps) {
+export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike, onEdit, onDelete }: OutfitCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
+  const [selectedOutfits, setSelectedOutfits] = useState<Outfit[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showOutfitModal, setShowOutfitModal] = useState(false);
-
+  const [currentOutfitIndex, setCurrentOutfitIndex] = useState(0);
 
   const calendarOutfits = useMemo(() => {
     return outfits.filter(outfit => outfit.category !== 'Saved');
   }, [outfits]);
 
+  // Updated to store multiple outfits per date
   const outfitsByDate = useMemo(() => {
-    const map = new Map<string, Outfit>();
+    const map = new Map<string, Outfit[]>();
     calendarOutfits.forEach(outfit => {
       const dateKey = new Date(outfit.created_at).toDateString();
       if (!map.has(dateKey)) {
-        map.set(dateKey, outfit);
+        map.set(dateKey, []);
       }
+      map.get(dateKey)!.push(outfit);
     });
+    
+    // Sort outfits by creation time for each date
+    map.forEach((dayOutfits) => {
+      dayOutfits.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    });
+    
     return map;
   }, [calendarOutfits]);
 
- 
   const calendarDays = useMemo(() => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     
     const firstDay = new Date(year, month, 1);
-   
     const lastDay = new Date(year, month + 1, 0);
     
-  
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
     
@@ -82,19 +89,29 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
     return date.getMonth() === currentMonth.getMonth();
   };
 
-  const handleDateClick = (date: Date, outfit?: Outfit) => {
-    if (outfit) {
-      setSelectedOutfit(outfit);
+  const handleDateClick = (date: Date, dayOutfits?: Outfit[]) => {
+    if (dayOutfits && dayOutfits.length > 0) {
+      setSelectedOutfits(dayOutfits);
       setSelectedDate(date);
+      setCurrentOutfitIndex(0);
       setShowOutfitModal(true);
     }
-    onDateClick?.(date, outfit);
+    onDateClick?.(date, dayOutfits);
   };
 
   const closeOutfitModal = () => {
     setShowOutfitModal(false);
-    setSelectedOutfit(null);
+    setSelectedOutfits([]);
     setSelectedDate(null);
+    setCurrentOutfitIndex(0);
+  };
+
+  const navigateOutfit = (direction: 'prev' | 'next') => {
+    if (direction === 'prev' && currentOutfitIndex > 0) {
+      setCurrentOutfitIndex(currentOutfitIndex - 1);
+    } else if (direction === 'next' && currentOutfitIndex < selectedOutfits.length - 1) {
+      setCurrentOutfitIndex(currentOutfitIndex + 1);
+    }
   };
 
   const formatDate = (date: Date) => {
@@ -119,6 +136,10 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
     return `${Math.floor(diffInDays / 30)} months ago`;
   };
 
+  const getTotalDaysWithOutfits = () => {
+    return outfitsByDate.size;
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center pt-8">
@@ -137,6 +158,8 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
       </div>
     );
   }
+
+  const currentOutfit = selectedOutfits[currentOutfitIndex];
 
   return (
     <>
@@ -183,14 +206,16 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
           <div className="grid grid-cols-7 gap-4">
             {calendarDays.map((date, index) => {
               const dateKey = date.toDateString();
-              const outfit = outfitsByDate.get(dateKey);
+              const dayOutfits = outfitsByDate.get(dateKey) || [];
               const isCurrentMonthDay = isCurrentMonth(date);
               const isTodayDate = isToday(date);
+              const hasOutfits = dayOutfits.length > 0;
+              const hasMultipleOutfits = dayOutfits.length > 1;
 
               return (
                 <div
                   key={index}
-                  onClick={() => handleDateClick(date, outfit)}
+                  onClick={() => handleDateClick(date, dayOutfits)}
                   className={`
                     relative h-24 rounded-lg border-2 transition-all duration-200 cursor-pointer group
                     ${isTodayDate 
@@ -198,18 +223,28 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
                       : 'border-white/10 hover:border-white/30'
                     }
                     ${!isCurrentMonthDay ? 'opacity-30' : ''}
-                    ${outfit ? 'hover:scale-105' : 'hover:bg-white/5'}
+                    ${hasOutfits ? 'hover:scale-105' : 'hover:bg-white/5'}
                   `}
                 >
-                  {outfit ? (
-                    // Day with outfit
+                  {hasOutfits ? (
+                    // Day with outfit(s)
                     <div className="relative w-full h-full rounded-md overflow-hidden">
+                      {/* Show first outfit as main image */}
                       <img
-                        src={outfit.image}
-                        alt={outfit.title}
+                        src={dayOutfits[0].image}
+                        alt={dayOutfits[0].title}
                         className="w-full h-full object-cover transition-transform group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+                      
+                      {/* Multiple outfits indicator */}
+                      {hasMultipleOutfits && (
+                        <div className="absolute top-1 left-1 bg-white/90 text-black px-1.5 py-0.5 rounded text-xs font-bold">
+                          {dayOutfits.length}
+                        </div>
+                      )}
+                      
+                      {/* Day number */}
                       <div 
                         className="absolute top-2 right-2 text-sm font-bold text-white z-10"
                         style={{ 
@@ -219,6 +254,8 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
                       >
                         {date.getDate()}
                       </div>
+                      
+                      {/* Outfit title */}
                       <div className="absolute bottom-1 left-1 right-1">
                         <div 
                           className="text-xs text-white font-medium truncate"
@@ -227,7 +264,7 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
                             fontFamily: 'Inter'
                           }}
                         >
-                          {outfit.title}
+                          {hasMultipleOutfits ? `${dayOutfits[0].title} +${dayOutfits.length - 1}` : dayOutfits[0].title}
                         </div>
                       </div>
                     </div>
@@ -253,7 +290,7 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
             })}
           </div>
 
-          {/* Calendar Footer Stats - Updated to use filtered outfits */}
+          {/* Calendar Footer Stats */}
           <div className="mt-3 pt-2 border-t border-white/10">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
@@ -266,7 +303,7 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
               </div>
               <div>
                 <div className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>
-                  {outfitsByDate.size}
+                  {getTotalDaysWithOutfits()}
                 </div>
                 <div className="text-white/60 text-sm" style={{ fontFamily: 'Inter' }}>
                   Days with Outfits
@@ -274,7 +311,7 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
               </div>
               <div>
                 <div className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>
-                  {Math.round((outfitsByDate.size / calendarDays.filter(d => isCurrentMonth(d)).length) * 100)}%
+                  {Math.round((getTotalDaysWithOutfits() / calendarDays.filter(d => isCurrentMonth(d)).length) * 100)}%
                 </div>
                 <div className="text-white/60 text-sm" style={{ fontFamily: 'Inter' }}>
                   Month Coverage
@@ -285,15 +322,15 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
         </div>
       </div>
 
-      {/* Outfit Detail Modal */}
-      {showOutfitModal && selectedOutfit && selectedDate && (
+      {/* Enhanced Outfit Detail Modal */}
+      {showOutfitModal && selectedOutfits.length > 0 && currentOutfit && selectedDate && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex">
+          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex">
             {/* Image Section */}
             <div className="flex-1 relative bg-gray-100">
               <img
-                src={selectedOutfit.image}
-                alt={selectedOutfit.title}
+                src={currentOutfit.image}
+                alt={currentOutfit.title}
                 className="w-full h-full object-contain"
               />
               <button
@@ -302,75 +339,173 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
               >
                 <X className="w-5 h-5" />
               </button>
+
+              {/* Navigation arrows for multiple outfits */}
+              {selectedOutfits.length > 1 && (
+                <>
+                  {currentOutfitIndex > 0 && (
+                    <button
+                      onClick={() => navigateOutfit('prev')}
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all shadow-md"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+                  )}
+                  {currentOutfitIndex < selectedOutfits.length - 1 && (
+                    <button
+                      onClick={() => navigateOutfit('next')}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all shadow-md"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* Outfit counter */}
+              {selectedOutfits.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+                  {currentOutfitIndex + 1} of {selectedOutfits.length}
+                </div>
+              )}
             </div>
 
             {/* Details Section */}
-            <div className="w-96 p-8 overflow-y-auto bg-white">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-600" style={{ fontFamily: 'Inter' }}>
-                      {formatDate(selectedDate)}
+            <div className="w-96 flex flex-col bg-white">
+              {/* Header with date and multiple outfits indicator */}
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-gray-600" style={{ fontFamily: 'Inter' }}>
+                    {formatDate(selectedDate)}
+                  </span>
+                  {selectedOutfits.length > 1 && (
+                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                      {selectedOutfits.length} outfits
                     </span>
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-800" style={{ fontFamily: 'Playfair Display, serif' }}>
-                    {selectedOutfit.title}
+                  )}
+                </div>
+                <div className="flex items-start justify-between">
+                  <h2 className="text-2xl font-bold text-gray-800 flex-1" style={{ fontFamily: 'Playfair Display, serif' }}>
+                    {currentOutfit.title}
                   </h2>
-                </div>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onLike?.(selectedOutfit.id)
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-all"
-                >
-                  <Heart className={`w-6 h-6 ${selectedOutfit.liked ? 'text-red-500 fill-current' : 'text-gray-600 hover:text-red-500'}`} />
-                </button>
-              </div>
-
-              {selectedOutfit.description && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'Inter' }}>
-                    Description
-                  </h3>
-                  <p className="text-gray-700 leading-relaxed" style={{ fontFamily: 'Inter' }}>
-                    {selectedOutfit.description}
-                  </p>
-                </div>
-              )}
-
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3" style={{ fontFamily: 'Inter' }}>
-                  Category
-                </h3>
-                <span className="inline-block px-4 py-2 bg-[#0B2C21] text-white rounded-full font-semibold" style={{ fontFamily: 'Inter' }}>
-                  {selectedOutfit.category}
-                </span>
-              </div>
-
-              {selectedOutfit.tags && selectedOutfit.tags.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2" style={{ fontFamily: 'Inter' }}>
-                    <Tag className="w-4 h-4" />
-                    Tags
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedOutfit.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200 transition-colors"
-                        style={{ fontFamily: 'Inter' }}
-                      >
-                        #{tag}
-                      </span>
-                    ))}
+                  <div className="flex gap-2 ml-3">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onLike?.(currentOutfit.id)
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-all"
+                    >
+                      <Heart className={`w-5 h-5 ${currentOutfit.liked ? 'text-red-500 fill-current' : 'text-gray-600 hover:text-red-500'}`} />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onEdit?.(currentOutfit)
+                        closeOutfitModal()
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-all"
+                    >
+                      <Edit className="w-5 h-5 text-gray-600 hover:text-blue-600" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDelete?.(currentOutfit)
+                        closeOutfitModal()
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-all"
+                    >
+                      <Trash2 className="w-5 h-5 text-gray-600 hover:text-red-600" />
+                    </button>
                   </div>
                 </div>
-              )}
+              </div>
 
-              <div className="text-sm text-gray-500 border-t pt-4" style={{ fontFamily: 'Inter' }}>
-                Posted {formatTimePosted(selectedOutfit.created_at)}
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {currentOutfit.description && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: 'Inter' }}>
+                      Description
+                    </h3>
+                    <p className="text-gray-700 leading-relaxed" style={{ fontFamily: 'Inter' }}>
+                      {currentOutfit.description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3" style={{ fontFamily: 'Inter' }}>
+                    Category
+                  </h3>
+                  <span className="inline-block px-4 py-2 bg-[#0B2C21] text-white rounded-full font-semibold" style={{ fontFamily: 'Inter' }}>
+                    {currentOutfit.category}
+                  </span>
+                </div>
+
+                {currentOutfit.tags && currentOutfit.tags.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2" style={{ fontFamily: 'Inter' }}>
+                      <Tag className="w-4 h-4" />
+                      Tags
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {currentOutfit.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200 transition-colors"
+                          style={{ fontFamily: 'Inter' }}
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* All outfits for this day */}
+                {selectedOutfits.length > 1 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3" style={{ fontFamily: 'Inter' }}>
+                      All Outfits This Day
+                    </h3>
+                    <div className="space-y-2">
+                      {selectedOutfits.map((outfit, index) => (
+                        <button
+                          key={outfit.id}
+                          onClick={() => setCurrentOutfitIndex(index)}
+                          className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
+                            index === currentOutfitIndex 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={outfit.image}
+                              alt={outfit.title}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-gray-900 truncate" style={{ fontFamily: 'Inter' }}>
+                                {outfit.title}
+                              </div>
+                              <div className="text-sm text-gray-500" style={{ fontFamily: 'Inter' }}>
+                                {formatTimePosted(outfit.created_at)}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-sm text-gray-500 border-t pt-4" style={{ fontFamily: 'Inter' }}>
+                  Posted {formatTimePosted(currentOutfit.created_at)}
+                </div>
               </div>
             </div>
           </div>
