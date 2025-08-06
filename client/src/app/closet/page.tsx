@@ -215,7 +215,7 @@ export default function ClosetPage() {
   }, [isClient, API_BASE_URL])
 
   const tabs = ['My Items', 'Browse Catalog']
-  const filters = ['All', 'Tops', 'Bottoms', 'Dresses', 'Outerwear', 'Shoes', 'Accessories', 'Never Worn', 'Favorites', 'Recently Added']
+  const filters = ['All', 'Favorites', 'Tops', 'Bottoms', 'Dresses', 'Outerwear', 'Shoes', 'Accessories', 'Never Worn', 'Recently Added']
 
   const totalItems = clothingItems.length
   const recentlyWorn = clothingItems.filter(item => {
