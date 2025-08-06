@@ -25,11 +25,11 @@ export default function LandingPage() {
      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(245, 243, 236, 0.7)' }}></div>
 
      
-     <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-12">
+     <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6 sm:p-12">
        
        <div className="mb-8">
          <div className="relative inline-block">
-           <h1 className="text-9xl font-bold text-[#0B2C21] tracking-wider" style={{ 
+           <h1 className="text-8xl md:text-9xl font-bold text-[#0B2C21] tracking-wider" style={{ 
              fontFamily: 'Playfair Display, serif',
              textShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)'
            }}>
@@ -57,21 +57,21 @@ export default function LandingPage() {
          <p className="text-xl text-[#0B2C21] mb-1" style={{ 
            fontFamily: 'Playfair Display, serif',
            fontWeight: 500,
-           letterSpacing: '4%'
+           letterSpacing: '0.04em'
          }}>
            Your personal style sanctuary
          </p>
          <p className="text-xl text-[#0B2C21] mb-1" style={{ 
            fontFamily: 'Playfair Display, serif',
            fontWeight: 500,
-           letterSpacing: '4%'
+           letterSpacing: '0.04em'
          }}>
            Where fashion meets
          </p>
          <p className="text-xl text-[#0B2C21]" style={{ 
            fontFamily: 'Playfair Display, serif',
            fontWeight: 500,
-           letterSpacing: '4%'
+           letterSpacing: '0.04em'
          }}>
            organization
          </p>
