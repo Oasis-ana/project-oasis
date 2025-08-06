@@ -111,6 +111,10 @@ export function useOutfits() {
     const token = localStorage.getItem('authToken')
     if (!token) return false
     
+    // Optimistically remove the outfit from UI immediately
+    const previousOutfits = outfits
+    setOutfits(prev => prev.filter(o => o.id !== outfitId))
+    
     try {
       console.log('🗑️ Deleting outfit...', outfitId)
       
@@ -119,27 +123,19 @@ export function useOutfits() {
         headers: { 'Authorization': `Token ${token}` },
       })
       
-      console.log('🔍 Delete response status:', response.status)
-      console.log('🔍 Delete response ok:', response.ok)
-      
-      if (response.ok) {
-        console.log('✅ Delete successful')
-        setOutfits(prev => prev.filter(o => o.id !== outfitId))
+      if (response.ok || response.status === 404) {
+        console.log('✅ Delete confirmed')
         return true
       } else {
-        const errorText = await response.text()
-        console.error('❌ Delete failed:', response.status, errorText)
-        
-        if (response.status === 404) {
-          console.log('🤔 Got 404 - item might already be deleted, updating UI anyway')
-          setOutfits(prev => prev.filter(o => o.id !== outfitId))
-          return true
-        }
-        
+        console.error('❌ Delete failed:', response.status)
+        // Revert the optimistic update
+        setOutfits(previousOutfits)
         return false
       }
     } catch (error) {
       console.error('💥 Error deleting outfit:', error)
+      // Revert the optimistic update
+      setOutfits(previousOutfits)
       return false
     }
   }
