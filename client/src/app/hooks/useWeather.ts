@@ -1,4 +1,3 @@
-// hooks/useWeather.ts
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,7 +9,7 @@ export interface WeatherData {
     feels_like: number;
   };
   weather: {
-    main: string; // Correctly included
+    main: string; 
     description: string;
     icon: string;
   }[];

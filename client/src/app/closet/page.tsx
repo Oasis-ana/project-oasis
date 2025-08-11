@@ -31,7 +31,7 @@ interface User {
 export default function ClosetPage() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  // --- All your state and hooks remain unchanged ---
+ 
   const [user, setUser] = useState<User | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [activeTab, setActiveTab] = useState('My Items')
@@ -77,7 +77,7 @@ export default function ClosetPage() {
   
   const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({})
 
-  // --- All your functions remain unchanged ---
+ 
   const showSuccess = (message: string) => {
     setSuccessMessage(message)
     setShowSuccessModal(true)
@@ -871,10 +871,7 @@ export default function ClosetPage() {
       <main className="flex-1 w-full md:ml-20">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 gap-4 border-b border-gray-200/80">
           <div className="relative">
-            {/* This code uses your original inline styles to ensure the hanger's placement
-              and the text's appearance are exactly what you specified. The rest of the
-              page remains responsive for mobile-friendliness.
-            */}
+           
             <h1
               style={{
                 fontFamily: 'Playfair Display, serif',

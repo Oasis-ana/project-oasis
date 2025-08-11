@@ -2,15 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Outfit } from '../types/outfit'
-// Optional: Uncomment if you add compression
-// import imageCompression from 'browser-image-compression'
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'
 
 export function useOutfits() {
   const [outfits, setOutfits] = useState<Outfit[]>([])
   const [isLoadingOutfits, setIsLoadingOutfits] = useState(true)
-  const [isUploading, setIsUploading] = useState(false) // Optional: for showing upload state
+  const [isUploading, setIsUploading] = useState(false) 
 
   const fetchOutfits = useCallback(async (skipLoading = false) => {
     if (!skipLoading) {
@@ -48,16 +47,7 @@ export function useOutfits() {
     const token = localStorage.getItem('authToken')
     if (!token) return null
 
-    // Optional: compress image before appending
-    // const file = formData.get('image') as File
-    // if (file) {
-    //   const compressed = await imageCompression(file, {
-    //     maxSizeMB: 1,
-    //     maxWidthOrHeight: 1200,
-    //     useWebWorker: true,
-    //   })
-    //   formData.set('image', compressed)
-    // }
+
 
     setIsUploading(true)
 

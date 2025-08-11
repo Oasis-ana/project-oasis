@@ -29,7 +29,7 @@ interface ItemData {
   tags: string
 }
 
-// Updated weather icon function with better condition mapping
+
 const getWeatherIcon = (weather: any) => {
   const iconProps = { className: "w-5 h-5 lg:w-6 lg:h-6 text-white" };
   
@@ -42,7 +42,7 @@ const getWeatherIcon = (weather: any) => {
   const iconCode = weather.weather[0].icon;
   const isDay = iconCode.endsWith('d');
 
-  // Primary condition-based mapping
+  
   switch (condition) {
     case 'clear':
       return isDay ? <Sun {...iconProps} /> : <Moon {...iconProps} />;
@@ -78,7 +78,7 @@ const getWeatherIcon = (weather: any) => {
       return <Wind {...iconProps} />;
     
     default:
-      // Fallback to icon code mapping
+      
       switch (iconCode) {
         case '01d': return <Sun {...iconProps} />;
         case '01n': return <Moon {...iconProps} />;
@@ -127,7 +127,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
   const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
   const { weather, loading, error } = useWeather();
 
-  // Mobile menu state
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleWeatherIconClick = () => {
@@ -138,7 +138,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
     }
   };
 
-  // Updated render function to use the new weather icon logic
+  
   const renderWeatherIcon = () => {
     if (loading) {
       return <LoaderCircle className="w-5 h-5 lg:w-6 lg:h-6 text-white animate-spin" />;
@@ -155,7 +155,7 @@ const Sidebar = ({ user, onShowSettings }: SidebarProps) => {
 
   const handleCameraClick = () => {
     setShowChoiceModal(true)
-    setIsMobileMenuOpen(false) // Close mobile menu when opening modal
+    setIsMobileMenuOpen(false) 
   }
 
   const handleChoiceSelection = (choice: 'outfit' | 'item') => {

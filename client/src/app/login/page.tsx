@@ -28,7 +28,7 @@ export default function LoginPage() {
 
  return (
    <div className="relative min-h-screen bg-[#F5F3EC]">
-      {/* Blurred Background Image - ONLY for mobile */}
+      
       <div className="absolute inset-0 filter blur-lg lg:hidden">
         <Image 
           src="/clothing-collage.png" 
@@ -41,10 +41,10 @@ export default function LoginPage() {
         />
       </div>
       
-      {/* Background Overlay for readability - ONLY for mobile */}
+      
       <div className="absolute inset-0 bg-[#F5F3EC]/75 lg:hidden"></div>
 
-      {/* Content Container: Switches from column to row */}
+      
       <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
         {/* Form Section */}
         <div className="flex w-full flex-1 items-center justify-center p-6 lg:w-1/2 lg:p-12">
@@ -207,7 +207,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Image Section - hidden on mobile, block on desktop */}
+        
         <div className="relative hidden w-1/2 lg:block">
           <Image
             src="/clothing-collage.png"

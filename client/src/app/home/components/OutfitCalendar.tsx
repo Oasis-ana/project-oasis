@@ -187,7 +187,7 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
             </button>
           </div>
 
-          {/* Weekday Headers - mobile optimized */}
+          
           <div className="grid grid-cols-7 gap-1 lg:gap-4 mb-2">
             {weekDays.map(day => (
               <div 
@@ -225,7 +225,7 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
                   `}
                 >
                   {hasOutfits ? (
-                    // Day with outfit(s) - mobile optimized
+                    
                     <div className="relative w-full h-full rounded-md overflow-hidden">
                       <img
                         src={dayOutfits[0].image}
@@ -267,7 +267,7 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
                       </div>
                     </div>
                   ) : (
-                    // Empty day - mobile optimized
+                    
                     <div className="flex items-center justify-center w-full h-full">
                       <span 
                         className={`text-sm lg:text-lg font-medium ${
@@ -288,7 +288,7 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
             })}
           </div>
 
-          {/* Calendar Footer Stats - mobile optimized */}
+          
           <div className="mt-3 pt-2 border-t border-white/10">
             <div className="grid grid-cols-3 gap-2 lg:gap-3 text-center">
               <div>
@@ -320,7 +320,7 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
         </div>
       </div>
 
-      {/* Enhanced Outfit Detail Modal - mobile optimized */}
+      {/*  Outfit Detail Modal - mobile optimized */}
       {showOutfitModal && selectedOutfits.length > 0 && currentOutfit && selectedDate && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col lg:flex-row">
@@ -421,7 +421,7 @@ export default function OutfitCalendar({ outfits, isLoading, onDateClick, onLike
                 </div>
               </div>
 
-              {/* Scrollable content - mobile optimized */}
+              {/*  content - mobile optimized */}
               <div className="flex-1 overflow-y-auto p-4 lg:p-6 -webkit-overflow-scrolling-touch">
                 {currentOutfit.description && (
                   <div className="mb-4 lg:mb-6">

@@ -88,7 +88,7 @@ export default function SignupPage() {
 
   return (
     <div className="relative min-h-screen bg-[#F5F3EC]">
-      {/* Blurred Background Image - ONLY for mobile */}
+      
       <div className="absolute inset-0 filter blur-lg lg:hidden">
         <Image 
           src="/clothing-collage.png" 
@@ -101,12 +101,12 @@ export default function SignupPage() {
         />
       </div>
       
-      {/* Background Overlay for readability - ONLY for mobile */}
+      
       <div className="absolute inset-0 bg-[#F5F3EC]/75 lg:hidden"></div>
 
-      {/* Content Container: Switches from column to row */}
+      
       <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
-        {/* Form Section */}
+        
         <div className="flex w-full flex-1 items-center justify-center p-6 lg:w-1/2 lg:p-12">
           <div className="w-full max-w-sm flex flex-col items-center">
             <div className="mb-10 lg:mb-16">
@@ -149,7 +149,7 @@ export default function SignupPage() {
                 </div>
               </div>
               
-              {/* Email Field */}
+              
               <div className="relative">
                 <div style={{ width: '300px', height: '50px', background: 'rgba(217, 217, 217, 0.40)', display: 'flex', alignItems: 'center', position: 'relative' }} className="ring-1 ring-[#0B2C21]/70 lg:ring-0">
                   {!formData.email && (<span style={{ color: '#000', fontFamily: 'Inter', fontSize: '16px', fontWeight: 200, position: 'absolute', left: '16px', pointerEvents: 'none' }}>Email <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span></span>)}
@@ -157,7 +157,7 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* Password Group (Input + Validation) */}
+              
               <div className="w-[300px] space-y-2">
                 <div className="relative">
                   <div style={{ width: '100%', height: '50px', background: 'rgba(217, 217, 217, 0.40)', display: 'flex', alignItems: 'center', position: 'relative' }} className="ring-1 ring-[#0B2C21]/70 lg:ring-0">
@@ -178,7 +178,7 @@ export default function SignupPage() {
                 )}
               </div>
 
-              {/* Confirm Password Field */}
+              
               <div className="relative">
                 <div style={{ width: '300px', height: '50px', background: 'rgba(217, 217, 217, 0.40)', display: 'flex', alignItems: 'center', position: 'relative' }} className="ring-1 ring-[#0B2C21]/70 lg:ring-0">
                   {!formData.password_confirm && (<span style={{ color: '#000', fontFamily: 'Inter', fontSize: '16px', fontWeight: 200, position: 'absolute', left: '16px', pointerEvents: 'none' }}>Confirm Password <span style={{ color: '#FF0606', fontWeight: 700 }}>*</span></span>)}

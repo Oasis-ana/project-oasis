@@ -18,7 +18,7 @@ export const useCamera = () => {
       }
     } catch (error) {
       console.error('Error accessing camera:', error)
-      // Try other camera if first fails
+      
       try {
         const fallbackMode = facingMode === 'user' ? 'environment' : 'user'
         const stream = await navigator.mediaDevices.getUserMedia({ 

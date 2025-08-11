@@ -10,7 +10,7 @@ interface WeatherModalProps {
 }
 
 const getWeatherIcon = (condition: string) => {
-  // Styles scale up on larger screens
+  
   const iconClass = "w-12 h-12 sm:w-16 sm:h-16";
   
   if (condition.includes('rain')) {
@@ -77,13 +77,13 @@ export default function WeatherModal({ isOpen, onClose, weather }: WeatherModalP
       onClick={onClose}
     >
       <div 
-        // RESPONSIVE CHANGE: Starts compact (max-w-xs) and scales up to a larger size (sm:max-w-md).
+        
         className="relative bg-white/95 backdrop-blur-md rounded-2xl w-full max-w-xs sm:max-w-md shadow-2xl overflow-hidden border border-white/20"
         onClick={(e) => e.stopPropagation()}
       >
         
-        {/* Header */}
-        {/* RESPONSIVE CHANGE: Padding is tight on mobile and larger on bigger screens. */}
+        
+        
         <div className="bg-[#0B2C21] p-4 sm:p-6 text-white relative overflow-hidden">
           <button 
             onClick={onClose}
@@ -97,7 +97,7 @@ export default function WeatherModal({ isOpen, onClose, weather }: WeatherModalP
               {getWeatherIcon(condition)}
             </div>
             
-            {/* RESPONSIVE CHANGE: All font sizes start smaller and increase on larger screens. */}
+            
             <h3 className="text-xl sm:text-2xl font-bold mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>
               Today's Weather
             </h3>
@@ -188,7 +188,7 @@ export default function WeatherModal({ isOpen, onClose, weather }: WeatherModalP
           </div>
         </div>
 
-        {/* Footer with additional info */}
+        {/* Rain/Snow reminder */}
         {(condition.includes('rain') || condition.includes('snow')) && (
           <div className="px-4 py-2 sm:px-6 sm:py-3 bg-[#0B2C21]/5 border-t border-[#0B2C21]/10">
             <div className="flex items-center justify-center gap-2 text-[#0B2C21]">

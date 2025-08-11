@@ -82,8 +82,7 @@ export function useAuth() {
       
       const response = await API.post('/auth/register/', registrationData)
       
-      // --- AUTOMATIC LOGIN LOGIC ---
-      // After successful registration, get the token to log the user in.
+      
       const { token } = response.data
       
       if (token) {
@@ -91,10 +90,10 @@ export function useAuth() {
         setAuthToken(token)
         console.log('Registration successful and user logged in.')
       } else {
-        // This case would happen if your backend doesn't return a token on registration.
+        
         console.warn('Registration successful, but no auth token was returned from the API for auto-login.')
       }
-      // --- END OF AUTOMATIC LOGIN LOGIC ---
+      
 
       return response.data
     } catch (err: any) {

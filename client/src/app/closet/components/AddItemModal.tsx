@@ -46,11 +46,11 @@ export default function AddItemModal({
   }
 
   return (
-    // RESPONSIVE CHANGE: Added padding for small screens (p-4)
+   
     <div className="fixed inset-0 backdrop-blur-md bg-white/20 flex items-center justify-center z-50 p-4">
-      {/* RESPONSIVE CHANGE: Modal width is now responsive, taking full width on small screens. */}
+     
       <div className="bg-white/95 backdrop-blur-md rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl border border-white/20">
-        {/* RESPONSIVE CHANGE: Padding adjusted for smaller screens. */}
+       
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
           <h3 className="text-lg sm:text-xl font-semibold text-[#0B2C21]" style={{ fontFamily: 'Playfair Display, serif' }}>
             Add New Item
@@ -63,14 +63,14 @@ export default function AddItemModal({
           </button>
         </div>
 
-        {/* RESPONSIVE CHANGE: Padding adjusted for smaller screens. */}
+       
         <div className="p-4 sm:p-6">
           {!selectedImage ? (
             <div className="mb-6">
               <h4 className="text-lg font-medium text-[#0B2C21] mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
                 Add Item Photo
               </h4>
-               {/* RESPONSIVE CHANGE: Grid stacks to one column on small screens. */}
+               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   onClick={startCamera} 
@@ -95,13 +95,13 @@ export default function AddItemModal({
             </div>
           ) : (
             <div className="space-y-6">
-               {/* RESPONSIVE CHANGE: Layout stacks vertically on small screens. */}
+               
               <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6">
                 <div className="relative flex-shrink-0 w-full sm:w-48">
                   <img
                     src={selectedImage}
                     alt="Selected"
-                    // RESPONSIVE CHANGE: Image takes full width on small screens and has a fixed height.
+                    
                     className="w-full h-64 sm:h-64 sm:w-48 object-contain rounded-lg shadow-md bg-gray-100"
                   />
                   <button
@@ -112,7 +112,7 @@ export default function AddItemModal({
                   </button>
                 </div>
 
-                {/* RESPONSIVE CHANGE: Buttons are now in a row on small screens. */}
+                
                 <div className="flex flex-row sm:flex-col w-full sm:w-auto space-x-2 sm:space-x-0 sm:space-y-3">
                   <button
                     onClick={startCamera} 
@@ -182,7 +182,7 @@ export default function AddItemModal({
                   </select>
                 </div>
 
-                {/* RESPONSIVE CHANGE: Grid stacks to one column on small screens. */}
+                
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="size" className="block text-sm font-medium text-[#0B2C21] mb-2" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -233,7 +233,7 @@ export default function AddItemModal({
                 </div>
               </div>
               
-              {/* RESPONSIVE CHANGE: Button takes full width on small screens. */}
+              
               <div className="flex justify-end mt-8">
                 <button
                   onClick={handleSaveItem}

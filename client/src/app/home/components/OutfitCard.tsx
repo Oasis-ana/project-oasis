@@ -18,18 +18,17 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
   const [imageError, setImageError] = useState(false)
   const [showMobileActions, setShowMobileActions] = useState(false)
 
-  // This function now safely handles cases where 'tags' might be a string or an array,
-  // preventing the TypeScript error.
+  
   const getTagsArray = () => {
-    const tags: any = outfit.tags; // Safely treat tags as 'any' type for this check
+    const tags: any = outfit.tags; 
 
     if (Array.isArray(tags)) {
-      return tags; // It's already an array, use it directly
+      return tags; 
     }
     if (typeof tags === 'string' && tags.length > 0) {
-      return tags.split(',').map(tag => tag.trim()); // It's a string, so we split it
+      return tags.split(',').map(tag => tag.trim()); 
     }
-    return []; // It's empty or in a format we don't recognize
+    return []; 
   }
   const tagsArray = getTagsArray();
 
@@ -44,9 +43,9 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
       onClick={() => onClick(outfit)}
     >
       
-      {/* This container enforces a 3/4 aspect ratio. Padding has been removed to "zoom in" slightly. */}
+     
       <div className="relative w-full aspect-[3/4] bg-gray-100">
-        {/* Loading Skeleton */}
+        {/* Placeholder for loading state */}
         {!imageLoaded && !imageError && (
           <div 
             className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200"
@@ -58,7 +57,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
           </div>
         )}
 
-        {/* Error Placeholder */}
+        
         {imageError && (
           <div 
             className="absolute inset-0 flex items-center justify-center bg-gray-200 text-gray-600"
@@ -70,7 +69,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
           </div>
         )}
 
-        {/* The Image - object-contain ensures the entire image is visible */}
+        
         <img
           src={outfit.image}
           alt={outfit.title}
@@ -89,7 +88,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
           decoding="async"
         />
 
-        {/* Overlays - Time and Like button */}
+        
         {imageLoaded && (
           <>
             <div className="absolute top-2 lg:top-3 left-2 lg:left-3 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-xs font-medium">
@@ -106,7 +105,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
               <Heart className={`w-4 h-4 ${outfit.liked ? 'text-red-500 fill-current' : 'text-gray-600 hover:text-red-500'}`} />
             </button>
 
-            {/* Mobile Actions Menu Button */}
+            {/* Mobile Menu Button */}
             <button
               onClick={handleMobileMenuToggle}
               className="absolute bottom-2 right-2 p-2 bg-white bg-opacity-90 hover:bg-white active:bg-white rounded-full transition-all shadow-md touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center lg:hidden"
@@ -156,7 +155,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
         )}
       </div>
 
-      {/* Content Below Image - mobile optimized */}
+      {/* Content Below  mobile optimized */}
       <div className="p-3 lg:p-4">
         <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2 text-sm lg:text-base" style={{ fontFamily: 'Playfair Display, serif' }}>
           {outfit.title}
@@ -191,7 +190,7 @@ export default function OutfitCard({ outfit, onLike, onClick, onEdit, onDelete, 
         </span>
       </div>
 
-      {/* Desktop Hover Actions - Edit and Delete (Hidden on mobile) */}
+      {/* Action Buttons - visible on hover for desktop */}
       {imageLoaded && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden lg:flex">
           <button

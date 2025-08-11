@@ -1,5 +1,3 @@
-// app/home/page.tsx
-
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -60,7 +58,7 @@ export default function HomePage() {
   const [showDeleteOutfitModal, setShowDeleteOutfitModal] = useState(false)
   const [outfitToDelete, setOutfitToDelete] = useState<Outfit | null>(null)
   
-  // Add ref for touch timeout
+  
   const touchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -345,7 +343,7 @@ export default function HomePage() {
     setSuccessMessage('Outfit Posted! 🎉');
     resetOutfitForm();
     
-    // Force refresh the outfits to ensure they appear
+    
     setTimeout(async () => {
       console.log('🔄 Refreshing outfits after successful upload...')
       await fetchOutfits(true)
@@ -358,7 +356,7 @@ export default function HomePage() {
     resetOutfitForm()
   }
 
-  // SIMPLIFIED UPLOAD FUNCTION WITH TIMEOUT AND IMMEDIATE REFRESH
+  
   const handleSaveOrUpdateOutfit = async () => {
     if (!validateForm()) return
     if (isUploading) {
@@ -393,7 +391,7 @@ export default function HomePage() {
       formData.append('image', blob, 'outfit.jpg')
     }
 
-    // Add timeout wrapper
+    
     const uploadWithTimeout = async () => {
       return new Promise<Outfit | null>((resolve, reject) => {
         const timeout = setTimeout(() => {
@@ -435,11 +433,11 @@ export default function HomePage() {
         console.log('✅ Upload successful!')
         setUploadProgress(100)
         
-        // Immediately refresh outfits to ensure they appear
+        
         console.log('🔄 Refreshing outfits immediately after upload...')
         await fetchOutfits(true)
         
-        // Small delay to show 100% progress
+        
         setTimeout(() => {
           setIsUploading(false)
           setUploadProgress(0)
@@ -455,10 +453,10 @@ export default function HomePage() {
       console.error('💥 Error or timeout saving outfit:', error)
       
       if (error.message === 'Upload timeout') {
-        // Assume success after timeout
+        
         console.log('🤔 Upload timed out, assuming it worked...')
         
-        // Refresh outfits to check if it actually worked
+        
         console.log('🔄 Refreshing outfits after timeout...')
         await fetchOutfits(true)
         
@@ -619,7 +617,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Tabs - mobile optimized with horizontal scroll */}
+          {/* Tabs - mobile optimized */}
           <div className="px-4 lg:px-6 pt-4">
             <div className="flex gap-2 lg:gap-3 mb-4 lg:mb-6 overflow-x-auto pb-2 scrollbar-hide">
                 {tabs.map((tab) => {
@@ -982,7 +980,7 @@ export default function HomePage() {
 
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* All other modals remain the same */}
+      
       {showDeleteModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-white/20 flex items-center justify-center z-50 p-4">
           <div className="bg-white/95 backdrop-blur-md rounded-lg p-6 w-full max-w-md shadow-xl border border-white/20">
