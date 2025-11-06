@@ -1,68 +1,63 @@
 # 🌿 Oasis: A Digital Wardrobe & Style Community
 
-**Oasis** is a modern digital closet and style app designed to help you effortlessly manage your wardrobe and discover your personal style. It's a space where you can organize your clothes, track your daily outfits, and find inspiration—all in one place.
+**Oasis** is a modern digital closet and style app designed to help you effortlessly manage your wardrobe and discover your personal style.  
+It’s a space where you can organize your clothes, track your daily outfits, and find inspiration—all in one place.
 
 ---
 
-##  Key Features
+## 🖼️ Screenshots
 
-This project focuses on building the foundational tools for a powerful digital wardrobe experience:
+| Outfit of the Day | My Closet | Weather Widget | Create Outfit |
+|-------------------|------------|----------------|----------------|
+| ![Outfit Of The Day](OASIS%201.jpeg) | ![My Closet](OASIS%202.jpeg) | ![Weather Widget](OASIS%203.jpeg) | ![Create Outfit](OASIS%204.jpeg) |
 
-- **Digital Closet**  
-  Easily upload, categorize, and organize your clothing items in a central hub.
-
-- **Outfit Builder**  
-  Create, save, and log new outfits by combining pieces from your digital wardrobe.
-
-- **OOTD Logger**  
-  Track your daily looks and view your outfit history over time.
-
-- **Powerful Search & Filters**  
-  Find exactly what you're looking for with robust search, filtering, and tagging capabilities.
 
 ---
 
-##  Future Vision
+## ✨ Key Features
+
+- **🧺 Digital Closet**  
+  Upload, categorize, and organize your clothing items in one hub.
+
+- **👗 Outfit Builder**  
+  Create, save, and log new outfits by combining pieces from your closet.
+
+- **📅 OOTD Logger**  
+  Track your daily looks and view outfit history over time.
+
+- **🔍 Powerful Search & Filters**  
+  Quickly find items or outfits by category, tag, or season.
+
+---
+
+## 🚧 Future Vision
 
 - **Community Feed** *(Planned)*  
-  A feature to enable users to share their favorite outfits publicly and browse a feed of other users' styles for inspiration.
+  Share your favorite outfits publicly and browse other users' styles for inspiration.
+
+- **AI Stylist** *(Coming Soon)*  
+  Personalized outfit recommendations powered by the **Gemini AI model**.
 
 ---
 
-##  Tech Stack
+## 🛠️ Tech Stack
 
-- **Frontend**: Next.js, Tailwind CSS  
-- **Backend**: Django with Django REST Framework  
-- **Database**: PostgreSQL  
-- **Authentication**: Token-based authentication  
-- **Image Storage**: AWS S3  
-- **Future Integrations**: Planned AI stylist using the Gemini AI model
+| Category | Tools |
+|-----------|-------|
+| **Frontend** | Next.js, Tailwind CSS |
+| **Backend** | Django, Django REST Framework |
+| **Database** | PostgreSQL |
+| **Auth** | Token-based authentication |
+| **Storage** | AWS S3 |
+| **Planned Integrations** | Gemini AI (for styling recommendations) |
 
 ---
 
 ## 🚀 Getting Started
 
-To get a local copy of **Oasis** up and running, follow these steps:
-
 ### 1. Clone the repository
-
 ```bash
 git clone https://github.com/your-username/project-oasis.git
 cd project-oasis
-```
-
-### 2. Install dependencies
-```bash
-cd client
-npm install
-```
-### 3. For the backend
-```bash
-cd ../server
-pip install -r requirements.txt
-```
-### 3. Configure environment variables
-```
-
 
 
