@@ -54,32 +54,69 @@ def register(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+#@api_view(['POST'])
+#@permission_classes([AllowAny])
+#def login(request):
+    #logger.info(f"Login attempt for username: {request.data.get('username', 'unknown')}")
+    
+    #serializer = UserLoginSerializer(data=request.data)
+    #if serializer.is_valid():
+        #user = serializer.validated_data['user']
+        #token, _ = Token.objects.get_or_create(user=user)
+        
+       # logger.info(f"User logged in successfully: {user.username}")
+        
+      #  return Response({
+          #  'user': {
+           #     'id': user.id,
+            #    'username': user.username,
+             #   'email': user.email,
+              #  'first_name': user.first_name,
+               # 'last_name': user.last_name,
+           # },
+            #'token': token.key,
+            #'message': 'Login successful'
+        #}, status=status.HTTP_200_OK)
+    
+    #logger.error(f"Login failed: {serializer.errors}")
+  
+#return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@csrf_exempt  
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
-    logger.info(f"Login attempt for username: {request.data.get('username', 'unknown')}")
-    
+    print(" LOGIN VIEW HIT")
+    print(" RAW request.data:", request.data)
+
     serializer = UserLoginSerializer(data=request.data)
+    print(" Serializer created")
+
     if serializer.is_valid():
+        print(" Serializer VALID")
+
         user = serializer.validated_data['user']
-        token, _ = Token.objects.get_or_create(user=user)
-        
-        logger.info(f"User logged in successfully: {user.username}")
-        
+        print("👤 Authenticated user:", user.username)
+
+        try:
+            print(" Creating or getting token…")
+            token, _ = Token.objects.get_or_create(user=user)
+            print(" Token created:", token.key)
+        except Exception as e:
+            print(" Token error:", str(e))
+
+        print("📤 Sending response…")
         return Response({
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
             },
-            'token': token.key,
-            'message': 'Login successful'
-        }, status=status.HTTP_200_OK)
-    
-    logger.error(f"Login failed: {serializer.errors}")
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            "token": token.key,
+            "message": "Login successful"
+        })
+
+    print("Serializer INVALID:", serializer.errors)
+    return Response(serializer.errors, status=400)
 
 
 @api_view(['POST'])
