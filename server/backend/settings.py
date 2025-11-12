@@ -87,7 +87,8 @@ REST_FRAMEWORK = {
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://project-oasis-omega.vercel.app",
+     "https://project-oasis-omega.vercel.app",
+    "https://oasis-production-6131.up.railway.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
@@ -109,9 +110,8 @@ CORS_ALLOWED_HEADERS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://project-oasis-omega.vercel.app",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+   "https://project-oasis-omega.vercel.app",
+    "https://oasis-production-6131.up.railway.app",
 ]
 
 
