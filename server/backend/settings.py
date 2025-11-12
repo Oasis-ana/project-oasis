@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'unsafe-key')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.railway.app', 'oasis-production-6131.up.railway.app']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.railway.app', 'oasis-production-6131.up.railway.app',  'project-oasis-omega.vercel.app']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
