@@ -1,6 +1,8 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+console.log(" FRONTEND USING API_URL ", API_URL);
+
 
 const API = axios.create({
   baseURL: `${API_URL}/api`,
