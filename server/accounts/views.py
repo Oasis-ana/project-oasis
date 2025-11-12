@@ -81,9 +81,9 @@ def register(request):
     #logger.error(f"Login failed: {serializer.errors}")
   
 #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-@csrf_exempt  
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@csrf_exempt
 def login(request):
     print(" LOGIN VIEW HIT")
     print(" RAW request.data:", request.data)
@@ -97,14 +97,9 @@ def login(request):
         user = serializer.validated_data['user']
         print("👤 Authenticated user:", user.username)
 
-        try:
-            print(" Creating or getting token…")
-            token, _ = Token.objects.get_or_create(user=user)
-            print(" Token created:", token.key)
-        except Exception as e:
-            print(" Token error:", str(e))
+        token, _ = Token.objects.get_or_create(user=user)
+        print(" Token created:", token.key)
 
-        print("📤 Sending response…")
         return Response({
             "user": {
                 "id": user.id,
