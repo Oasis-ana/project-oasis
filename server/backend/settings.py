@@ -85,6 +85,7 @@ REST_FRAMEWORK = {
     ],
 }
 
+CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOWED_ORIGINS = [
      "https://project-oasis-omega.vercel.app",
@@ -96,7 +97,6 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 
-#CORS_ALLOW_ALL_ORIGINS = DEBUG  
 CORS_ALLOWED_HEADERS = [
     'accept',
     'accept-encoding',
