@@ -62,11 +62,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///db.sqlite3',
-        conn_max_age=600  # Keep connections alive longer
+        conn_max_age=600  
     )
 }
 
-# REST Framework
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
@@ -74,18 +74,18 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
-    # ADD THESE FOR BETTER UPLOAD HANDLING:
+
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
-        'rest_framework.parsers.MultiPartParser',  # Important for file uploads
+        'rest_framework.parsers.MultiPartParser',  
         'rest_framework.parsers.FormParser',
     ],
 }
 
-# CORS - IMPROVED CONFIG
+
 CORS_ALLOWED_ORIGINS = [
     "https://project-oasis-omega.vercel.app",
     "http://localhost:3000",
@@ -94,8 +94,8 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
-# ADD THESE CORS SETTINGS FOR UPLOAD ISSUES:
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in debug mode
+
+CORS_ALLOW_ALL_ORIGINS = DEBUG  
 CORS_ALLOWED_HEADERS = [
     'accept',
     'accept-encoding',
@@ -114,16 +114,16 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 
-# ADD THESE CRITICAL SETTINGS FOR FILE UPLOADS:
-DATA_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024  # 25MB (increased from default 2.5MB)
-FILE_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024  # 25MB (increased from default 2.5MB)
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000  # Increased from default 1000
 
-# ADD TIMEOUT SETTINGS TO PREVENT HANGING:
-CONN_MAX_AGE = 600  # Database connection timeout
-SESSION_COOKIE_AGE = 86400  # 24 hours
+DATA_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024  
+FILE_UPLOAD_MAX_MEMORY_SIZE = 25 * 1024 * 1024 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000 
 
-# ADD THESE FOR BETTER REQUEST HANDLING:
+
+CONN_MAX_AGE = 600 
+SESSION_COOKIE_AGE = 86400 
+
+
 USE_TZ = True
 TIME_ZONE = 'America/New_York'
 
@@ -139,7 +139,7 @@ TIME_ZONE = 'America/New_York'
 USE_I18N = True
 USE_TZ = True
 
-# AWS S3 - IMPROVED CONFIG
+
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
@@ -153,7 +153,7 @@ if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME:
     AWS_S3_FILE_OVERWRITE = False
     AWS_S3_URL_PROTOCOL = 'https:'
     
-    # IMPROVED S3 SETTINGS FOR UPLOAD RELIABILITY:
+   
     AWS_S3_SIGNATURE_VERSION = 's3v4'
     AWS_S3_ADDRESSING_STYLE = 'virtual'
     AWS_S3_USE_SSL = True
@@ -171,7 +171,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ADD LOGGING FOR DEBUGGING UPLOAD ISSUES:
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -185,24 +185,24 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'INFO',
         },
-        'pins': {  # Your app name
+        'pins': { 
             'handlers': ['console'],
             'level': 'DEBUG',
         },
-        'accounts': {  # Your app name
+        'accounts': { 
             'handlers': ['console'],
             'level': 'DEBUG',
         },
     },
 }
 
-# ADD THESE FOR PRODUCTION RAILWAY DEPLOYMENT:
+
 if not DEBUG:
-    # Security settings for production
+   
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
     
-    # Keep these reasonable for file uploads
+   
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     USE_TZ = True
