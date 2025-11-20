@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'unsafe-key')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.railway.app', 'oasis-production-6131.up.railway.app',  'project-oasis-omega.vercel.app']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.railway.app', 'oasis-production-6131.up.railway.app',  'project-oasis-omega.vercel.app', "https://project-oasis-7n5rieeks-anas-projects-259712e6.vercel.app"]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -92,7 +92,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://oasis-production-6131.up.railway.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://project-oasis-7n5rieeks-anas-projects-259712e6.vercel.app/",
+    "https://project-oasis-7n5rieeks-anas-projects-259712e6.vercel.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -113,7 +113,7 @@ CORS_ALLOWED_HEADERS = [
 CSRF_TRUSTED_ORIGINS = [
    "https://project-oasis-omega.vercel.app",
     "https://oasis-production-6131.up.railway.app",
-    "https://project-oasis-7n5rieeks-anas-projects-259712e6.vercel.app/",
+    "https://project-oasis-7n5rieeks-anas-projects-259712e6.vercel.app",
 ]
 
 
