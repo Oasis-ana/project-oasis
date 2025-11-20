@@ -113,6 +113,7 @@ CORS_ALLOWED_HEADERS = [
 CSRF_TRUSTED_ORIGINS = [
    "https://project-oasis-omega.vercel.app",
     "https://oasis-production-6131.up.railway.app",
+    "https://project-oasis-7n5rieeks-anas-projects-259712e6.vercel.app/",
 ]
 
 
