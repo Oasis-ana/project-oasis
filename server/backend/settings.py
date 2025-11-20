@@ -92,7 +92,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://oasis-production-6131.up.railway.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://project-oasis-7n5rieeks-anas-projects-259712e6.vercel.app",
+    "https://project-oasis-7n5rieeks-anas-projects-259712e6.vercel.app/",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
